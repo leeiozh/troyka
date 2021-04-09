@@ -63,3 +63,12 @@ class SunForce(BaseForce):
 class OtherForce(BaseForce):
     def calc(self, *args):
         return self.Force
+
+
+class TestForce(BaseForce):
+
+    def calc(self, q, time):
+        self.Force[0] = - 15 * q[0] - 0.1 * q[3]
+        self.Force[1] = 0
+        self.Force[2] = 0
+        return self.Force
