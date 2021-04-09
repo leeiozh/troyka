@@ -4,28 +4,62 @@ import numpy as np
 
 
 class BaseForce(ABC):
+    """abstract class, which init a forces array"""
     Force = np.zeros(3, float)
 
     @abstractmethod
     def calc(self, *args):
+        """virtual method, which take some parameters and return a force"""
         pass
 
 
 class ResistForce(BaseForce):
-    Atmosphere = np.array([1.22500, 1.21913, 1.21328, 1.20746, 1.20165, 1.19587, 1.19011, 1.18437, 1.17865, 1.17295])
+    """
+    class air resist force
+    """
+    Atmosphere = np.empty(211, float)
+    input_atmosphere = open('atmosphere.csv', 'r')
+    i = 0
+    for line in input_atmosphere:
+        Atmosphere[i] = float(line.split()[2])
+        i += 1
     Square = 0
     Cx = 0
 
     def __init__(self, Square, Cx):
+        """
+        take satellite's square and mass
+        """
         self.Square = Square
         self.Cx = Cx
 
-    def get_atmosphere(self, q):
-        height = (q[0] ** 2 + q[1] ** 2 + q[2] ** 2) ** 0.5 // 10000
-        return self.Atmosphere[height]
+    def get_atmosphere(self, height):
+        """
+        :param height: orbit's height
+        :return: air's density
+        """
+
+        if height < 80000:
+            return self.Atmosphere[0]
+        elif height > 1200000:
+            return self.Atmosphere[-1]
+        elif 80000 < height < 500000:
+            x = int(height / 6000 - 40 / 3)
+            return self.Atmosphere[x] * (height / 6000 - (x + 40 / 3)) + self.Atmosphere[x + 1] * (
+                    1 - (height - (x + 43 / 3) * 6000)) / 6000
+        else:
+            x = int(height / 5000 - 30)
+            return self.Atmosphere[x] * (height / 5000 - (x + 30)) + self.Atmosphere[x + 1] * (
+                        1 - (height - (x + 31) * 5000)) / 5000
 
     def calc(self, q):
-        rho = self.get_atmosphere(self, q)
+        """
+        calculate force
+        :param q: satellite's coordinates and velocity
+        :return: force
+        """
+        height = (q[0] ** 2 + q[1] ** 2 + q[2] ** 2) ** 0.5 - 6.37e6
+        rho = self.get_atmosphere(height)
         self.Force[0] = - 0.5 * self.Cx * self.Square * rho * (q[3] ** 2)
         self.Force[1] = - 0.5 * self.Cx * self.Square * rho * (q[4] ** 2)
         self.Force[2] = - 0.5 * self.Cx * self.Square * rho * (q[5] ** 2)
@@ -35,23 +69,39 @@ class ResistForce(BaseForce):
 
 class GravityForce(BaseForce):
     GM = 4e14
+    mass = 0
+
+    def __init__(self, mass):
+        self.mass = mass
 
     def calc(self, q):
-        r = (q[0] ** 2 + q[1] ** 2 + q[2] ** 3) ** 0.5
-        self.Force[0] = - self.GM * q[0] / r ** 3
-        self.Force[1] = - self.GM * q[1] / r ** 3
-        self.Force[2] = - self.GM * q[2] / r ** 3
+        r = (q[0] ** 2 + q[1] ** 2 + q[2] ** 2) ** 0.5
+        self.Force[0] = - self.GM * self.mass * q[0] / r ** 3
+        self.Force[1] = - self.GM * self.mass * q[1] / r ** 3
+        self.Force[2] = - self.GM * self.mass * q[2] / r ** 3
         return self.Force
 
 
 class SunForce(BaseForce):
+    """
+    class sunlight pressure force
+    """
     Square = 0
     Wc = 4.556e-3
 
     def __init__(self, Square):
+        """
+        :param Square: satellite's square
+        """
         self.Square = Square
 
     def calc(self, q, time):
+        """
+        calculate force
+        :param q: satellite's coordinates and velocity
+        :param time: current time
+        :return: force
+        """
         sun = get_sun(time).obsgeoloc.xyz
         r = ((q[0] - sun[0].value) ** 2 + (q[1] - sun[1].value) ** 2 + (q[2] - sun[2].value) ** 2) ** 0.5
         self.Force[0] = self.Wc * self.Square * (q[0] - sun[0].value) / r
