@@ -1,11 +1,13 @@
 from abc import ABC, abstractmethod
 from astropy.coordinates import get_sun
+from astropy.time import Time
 import numpy as np
 
 
 class BaseForce(ABC):
     """abstract class, which init a forces array"""
     Force = np.zeros(3, float)
+    Time = Time('1999-01-01T00:00:00.123456789', format='isot', scale='utc')
 
     @abstractmethod
     def calc(self, *args):
@@ -52,10 +54,11 @@ class ResistForce(BaseForce):
             return self.Atmosphere[x] * (height / 5000 - (x + 30)) + self.Atmosphere[x + 1] * (
                         1 - (height - (x + 31) * 5000)) / 5000
 
-    def calc(self, q):
+    def calc(self, q, time):
         """
         calculate force
         :param q: satellite's coordinates and velocity
+        :param time: current time
         :return: force
         """
         height = (q[0] ** 2 + q[1] ** 2 + q[2] ** 2) ** 0.5 - 6.37e6
@@ -74,7 +77,7 @@ class GravityForce(BaseForce):
     def __init__(self, mass):
         self.mass = mass
 
-    def calc(self, q):
+    def calc(self, q, time):
         r = (q[0] ** 2 + q[1] ** 2 + q[2] ** 2) ** 0.5
         self.Force[0] = - self.GM * self.mass * q[0] / r ** 3
         self.Force[1] = - self.GM * self.mass * q[1] / r ** 3
