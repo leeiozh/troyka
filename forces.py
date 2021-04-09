@@ -15,6 +15,34 @@ class BaseForce(ABC):
         pass
 
 
+class CenterForce(BaseForce):
+    """
+    class centrifugal force
+    """
+    mass = 0
+
+    def __init__(self, mass):
+        """
+        take satellite's mass
+        """
+        self.mass = mass
+
+    def calc(self, q, time):
+        """
+        calculate force
+        :param q: satellite's coordinates and velocity
+        :param time: current time
+        :return: force
+        """
+        r = (q[0] ** 2 + q[1] ** 2 + q[2] ** 2) ** 0.5
+        v = (q[3] ** 2 + q[4] ** 2 + q[5] ** 2) ** 0.5
+        self.Force[0] = self.mass * v ** 2 * q[0] / r / r
+        self.Force[1] = self.mass * v ** 2 * q[1] / r / r
+        self.Force[2] = self.mass * v ** 2 * q[2] / r / r
+
+        return self.Force
+
+
 class ResistForce(BaseForce):
     """
     class air resist force
