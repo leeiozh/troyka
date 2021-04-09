@@ -116,6 +116,7 @@ class OtherForce(BaseForce):
 
 
 class TestForce(BaseForce):
+    """Force for testing integrators"""
 
     def calc(self, q, time):
         self.Force[0] = - 15 * q[0] - 0.1 * q[3]

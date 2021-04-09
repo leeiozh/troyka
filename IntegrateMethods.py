@@ -14,7 +14,7 @@ class Integrator:
     @abstractmethod
     def calc_next_step(self, state, time):
         """
-        Возвращает состояние через шаг dt
+        Return state after dt
         :param state: (x, y, z, vx, vy, vz)
         :param time:
         :return: (x, y, z, vx, vy, vz)
@@ -33,7 +33,7 @@ class EulerMethod1(Integrator):
 
     def calc_next_step(self, state, time):
         """
-        Возвращает состояние через шаг dt
+        Return state after dt
         :param state: (x, y, z, vx, vy, vz)
         :param time:
         :return: (x, y, z, vx, vy, vz)
@@ -66,12 +66,11 @@ class RK4Method(Integrator):
 
     def evaluate(self, state, derivative, dt, time):
         """
-        Вспомогательная функция для integrate, вычисляет и возвращает массив производных через время dt,
-        здесь же происходит вызов сил
+        Help function for calc_next_step, computers and returns a massive of derivatives after dt
         :param state: (x, y, z, vx, vy, vz)
         :param derivative: (vx, vy, vz, ax, ay, az)
         :param dt:
-        :param time: текущее время
+        :param time: current time
         :return: (vx, vy, vz, ax, ay, az)
         """
         new_state = np.array([])
@@ -86,7 +85,7 @@ class RK4Method(Integrator):
 
     def calc_next_step(self, state, time):
         """
-        Вычисляет и возвращает состояние через шаг dt
+        Return state after dt
         :param state: (x, y, z, vx, vy, vz)
         :param time: текущее время
         :return: (x, y, z, vx, vy, vz)
@@ -118,7 +117,7 @@ class RK4Method(Integrator):
         return np.array([x, y, z, vx, vy, vz])
 
 
-# тестирую интеграторы на гармоничесом осцилляторе с затуханием (можно запустить)
+# testing integrator on fading oscillation
 
 mass = 1
 delta_t = 0.01
@@ -137,7 +136,7 @@ mas_t = np.arange(10000) * 0.01
 for i in range(10000):
     mas_x = np.append(mas_x, state1[0])
     mas_v = np.append(mas_v, state1[3])
-    state1 = integrator1.calc_next_step(state1, 0)  # здесь можно поменять метод интегрирования
+    state1 = integrator1.calc_next_step(state1, 0)  # you can change the method here
 
 plt.plot(mas_t, mas_x)
 plt.show()
