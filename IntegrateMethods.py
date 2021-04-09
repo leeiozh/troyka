@@ -1,7 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from abc import abstractmethod
-from forces import TestForce
 
 
 class Integrator:
@@ -115,28 +113,3 @@ class RK4Method(Integrator):
         vz = state[5] + az * self.dt
 
         return np.array([x, y, z, vx, vy, vz])
-
-
-# testing integrator on fading oscillation
-
-mass = 1
-delta_t = 0.01
-state0 = np.array([100, 0, 0, 0, 0, 0])
-force1 = TestForce()
-Forces = [force1]
-integrator1 = RK4Method(delta_t, mass, Forces)
-integrator2 = EulerMethod1(delta_t, mass, Forces)
-integrator3 = EulerMethod2(delta_t, mass, Forces)
-
-state1 = state0
-mas_x = np.array([])
-mas_v = np.array([])
-mas_t = np.arange(10000) * 0.01
-
-for i in range(10000):
-    mas_x = np.append(mas_x, state1[0])
-    mas_v = np.append(mas_v, state1[3])
-    state1 = integrator1.calc_next_step(state1, 0)  # you can change the method here
-
-plt.plot(mas_t, mas_x)
-plt.show()
