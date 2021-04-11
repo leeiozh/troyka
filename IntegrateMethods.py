@@ -91,7 +91,6 @@ class RK4Method(Integrator):
         forces = self.calc_resultant_force(state, time)
         derivative = np.array([state[3], state[4], state[5], forces[0] / self.m, forces[1] / self.m,
                                forces[2] / self.m])
-
         a = self.evaluate(state, derivative, 0, time)
         b = self.evaluate(state, 0.5 * a, 0.5 * self.dt, time)
         c = self.evaluate(state, 0.5 * b, 0.5 * self.dt, time)
@@ -114,4 +113,3 @@ class RK4Method(Integrator):
         vz = state[5] + az * self.dt
 
         return np.array([x, y, z, vx, vy, vz])
-
