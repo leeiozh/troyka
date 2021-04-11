@@ -50,11 +50,12 @@ ax = fig.add_subplot(projection='3d')
 
 def anim(t):
     ax.clear()
-    ax.plot(mas_x, mas_y, mas_z,  color='red')
+    ax.plot(mas_x, mas_y, mas_z, color='red')
     ax.scatter(mas_x[t], mas_y[t], mas_z[t], color='blue')
     ax.scatter(0, 0, 0, color='green')
 
 
 ani = FuncAnimation(fig, anim, frames=len(mas_x) - 1)
-
 plt.show()
+
+# ani.save('3D.gif', writer='imagemagick')

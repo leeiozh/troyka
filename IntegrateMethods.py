@@ -75,7 +75,7 @@ class RK4Method(Integrator):
         for count in range(6):
             new_state = np.append(new_state, state[count] + derivative[count] * dt)
 
-        forces = self.calc_resultant_force(new_state, time)
+        forces = self.calc_resultant_force(new_state, time + dt)
 
         new_derivative = np.array([new_state[3], new_state[4], new_state[5], forces[0] / self.m,
                                    forces[1] / self.m, forces[2] / self.m])
@@ -92,8 +92,8 @@ class RK4Method(Integrator):
         derivative = np.array([state[3], state[4], state[5], forces[0] / self.m, forces[1] / self.m,
                                forces[2] / self.m])
         a = self.evaluate(state, derivative, 0, time)
-        b = self.evaluate(state, a, 0.5 * self.dt, time)
-        c = self.evaluate(state, b, 0.5 * self.dt, time)
+        b = self.evaluate(state, 0.5 * a, 0.5 * self.dt, time)
+        c = self.evaluate(state, 0.5 * b, 0.5 * self.dt, time)
         d = self.evaluate(state, c, self.dt, time)
 
         vx = (a[0] + 2 * (b[0] + c[0]) + d[0]) / 6
