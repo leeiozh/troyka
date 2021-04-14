@@ -8,6 +8,11 @@ class Integrator:
         self.m = m
         self.dt = dt
         self.forces = forces
+        self.b = np.array([])
+        self.c = np.array([])
+        self.k1 = np.array([])
+        self.k2 = np.array([])
+        self.k = np.array([[0, 0, 0, 0, 0, 0]])
 
     @abstractmethod
     def calc_next_step(self, state, time):
@@ -25,6 +30,23 @@ class Integrator:
             for j in range(3):
                 resultant[j] += force[j]
         return resultant
+
+    def evaluate(self, state, derivative, dt, time):
+        """
+        Help function for calc_next_step, computers and returns a massive of derivatives after dt
+        :param state: (x, y, z, vx, vy, vz)
+        :param derivative: (vx, vy, vz, ax, ay, az)
+        :param dt:
+        :param time: current time
+        :return: (vx, vy, vz, ax, ay, az)
+        """
+
+        new_state = state + dt * derivative
+
+        forces = self.calc_resultant_force(new_state, time + dt)
+        new_derivative = np.array([new_state[3], new_state[4], new_state[5], forces[0] / self.m,
+                                   forces[1] / self.m, forces[2] / self.m])
+        return new_derivative
 
 
 class EulerMethod1(Integrator):
@@ -62,24 +84,9 @@ class EulerMethod2(Integrator):
 
 class RK4Method(Integrator):
 
-    def evaluate(self, state, derivative, dt, time):
-        """
-        Help function for calc_next_step, computers and returns a massive of derivatives after dt
-        :param state: (x, y, z, vx, vy, vz)
-        :param derivative: (vx, vy, vz, ax, ay, az)
-        :param dt:
-        :param time: current time
-        :return: (vx, vy, vz, ax, ay, az)
-        """
-        new_state = np.array([])
-        for count in range(6):
-            new_state = np.append(new_state, state[count] + derivative[count] * dt)
-
-        forces = self.calc_resultant_force(new_state, time + dt)
-
-        new_derivative = np.array([new_state[3], new_state[4], new_state[5], forces[0] / self.m,
-                                   forces[1] / self.m, forces[2] / self.m])
-        return new_derivative
+    b = np.array([[], [0.5], [0, 0.5], [0, 0, 1]], dtype=object)
+    c = np.array([0, 0.5, 0.5, 1])
+    k1 = np.array([1 / 6, 1 / 3, 1 / 3, 1 / 6])
 
     def calc_next_step(self, state, time):
         """
@@ -88,30 +95,65 @@ class RK4Method(Integrator):
         :param time: текущее время
         :return: (x, y, z, vx, vy, vz)
         """
+
+        self.k = np.array([[0, 0, 0, 0, 0, 0]])
+        forces = self.calc_resultant_force(state, time)
+
+        derivative = np.array([state[3], state[4], state[5], forces[0] / self.m, forces[1] / self.m,
+                               forces[2] / self.m])
+        self.k[0] = derivative
+        for i in range(1, len(RK4Method.c)):
+            new_k = self.evaluate(state, np.dot(RK4Method.b[i], self.k), RK4Method.c[i] * self.dt, time)
+            self.k = np.append(self.k, [new_k],
+                               axis=0)
+
+        new_derivative = np.dot(RK4Method.k1, self.k)
+
+        new_state = state + self.dt * new_derivative
+
+        return new_state
+
+
+class DormandPrinceMethod(Integrator):
+
+    b = np.array([[], [1 / 5], [3 / 40, 9 / 40], [44 / 45, -56 / 15, 32 / 9],
+                       [19372 / 6561, -25360 / 2187, 64448 / 6561, -212 / 729],
+                       [9017 / 3168, -355 / 33, -46732 / 5247, 49 / 176, -5103 / 18656],
+                       [35 / 384, 0, 500 / 1113, 125 / 192, -2187 / 6784, 11 / 84]], dtype=object)
+    k1 = np.array([35 / 384, 0, 500 / 1113, 125 / 192, -2187 / 6784, 11 / 84, 0])
+    k2 = np.array([5179 / 57600, 0, 7571 / 16695, 393 / 640, -92097 / 339200, 187 / 2100, 1 / 40])
+    c = np.array([0, 1 / 5, 3 / 10, 4 / 5, 8 / 9, 1, 1])
+
+    def calc_next_step(self, state, time):
+        """
+        Return state after dt
+        :param state: (x, y, z, vx, vy, vz)
+        :param time: текущее время
+        :return: (x, y, z, vx, vy, vz)
+        """
+
+        self.k = np.array([[0, 0, 0, 0, 0, 0]])
         forces = self.calc_resultant_force(state, time)
         derivative = np.array([state[3], state[4], state[5], forces[0] / self.m, forces[1] / self.m,
                                forces[2] / self.m])
+        self.k[0] = derivative
+        for i in range(1, len(DormandPrinceMethod.c)):
+            new_k = self.evaluate(state, np.dot(DormandPrinceMethod.b[i], self.k), DormandPrinceMethod.c[i] * self.dt,
+                                  time)
+            self.k = np.append(self.k, [new_k],
+                               axis=0)
 
-        a = self.evaluate(state, derivative, 0, time)
-        b = self.evaluate(state, 0.5 * a, 0.5 * self.dt, time)
-        c = self.evaluate(state, 0.5 * b, 0.5 * self.dt, time)
-        d = self.evaluate(state, c, self.dt, time)
+        # calculating error
+        next_step1 = state + np.dot(DormandPrinceMethod.k1, self.k)
+        next_step2 = state + np.dot(DormandPrinceMethod.k2, self.k)
 
-        vx = (a[0] + 2 * (b[0] + c[0]) + d[0]) / 6
-        vy = (a[1] + 2 * (b[1] + c[1]) + d[1]) / 6
-        vz = (a[2] + 2 * (b[2] + c[2]) + d[2]) / 6
+        error = np.abs(next_step1[0] - next_step2[0])
+        eps = 0.5
+        # s = (eps * self.dt / 2 / error) ** 0.2
+        if error > eps:
+            self.dt = 0.5 * self.dt
+        if error < eps:
+            self.dt = 2 * self.dt
 
-        ax = (a[3] + 2 * (b[3] + c[3]) + d[3]) / 6
-        ay = (a[4] + 2 * (b[4] + c[4]) + d[4]) / 6
-        az = (a[5] + 2 * (b[5] + c[5]) + d[5]) / 6
-
-        x = state[0] + vx * self.dt
-        y = state[1] + vy * self.dt
-        z = state[2] + vz * self.dt
-
-        vx = state[3] + ax * self.dt
-        vy = state[4] + ay * self.dt
-        vz = state[5] + az * self.dt
-
-        return np.array([x, y, z, vx, vy, vz])
+        return next_step1
 
