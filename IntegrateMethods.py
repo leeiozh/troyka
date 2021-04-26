@@ -96,18 +96,18 @@ class RK4Method(Integrator):
         :return: (x, y, z, vx, vy, vz)
         """
 
-        self.k = np.array([[0, 0, 0, 0, 0, 0]])
+        self.k = np.array([np.zeros(6)])
         forces = self.calc_resultant_force(state, time)
 
         derivative = np.array([state[3], state[4], state[5], forces[0] / self.m, forces[1] / self.m,
                                forces[2] / self.m])
         self.k[0] = derivative
         for i in range(1, len(RK4Method.c)):
-            new_k = self.evaluate(state, np.dot(RK4Method.b[i], self.k), RK4Method.c[i] * self.dt, time)
+            new_k = self.evaluate(state, RK4Method.b[i] @ self.k, RK4Method.c[i] * self.dt, time)
             self.k = np.append(self.k, [new_k],
                                axis=0)
 
-        new_derivative = np.dot(RK4Method.k1, self.k)
+        new_derivative = RK4Method.k1 @ self.k
 
         new_state = state + self.dt * new_derivative
 
@@ -116,13 +116,13 @@ class RK4Method(Integrator):
 
 class DormandPrinceMethod(Integrator):
 
-    b = np.array([[], [1 / 5], [3 / 40, 9 / 40], [44 / 45, -56 / 15, 32 / 9],
-                       [19372 / 6561, -25360 / 2187, 64448 / 6561, -212 / 729],
-                       [9017 / 3168, -355 / 33, -46732 / 5247, 49 / 176, -5103 / 18656],
-                       [35 / 384, 0, 500 / 1113, 125 / 192, -2187 / 6784, 11 / 84]], dtype=object)
-    k1 = np.array([35 / 384, 0, 500 / 1113, 125 / 192, -2187 / 6784, 11 / 84, 0])
-    k2 = np.array([5179 / 57600, 0, 7571 / 16695, 393 / 640, -92097 / 339200, 187 / 2100, 1 / 40])
-    c = np.array([0, 1 / 5, 3 / 10, 4 / 5, 8 / 9, 1, 1])
+    b = np.array([[], [1/5], [3/40, 9/40], [44/45, -56/15, 32/9],
+                       [19372/6561, -25360/2187, 64448/6561, -212/729],
+                       [9017/3168, -355/33, -46732/5247, 49/176, -5103/18656],
+                       [35/384, 0, 500/1113, 125/192, -2187/6784, 11/84]], dtype=object)
+    k1 = np.array([35/384, 0, 500/1113, 125/192, -2187/6784, 11/84, 0])
+    k2 = np.array([5179/57600, 0, 7571/16695, 393/640, -92097/339200, 187/2100, 1/40])
+    c = np.array([0, 1/5, 3/10, 4/5, 8/9, 1, 1])
 
     def calc_next_step(self, state, time):
         """
@@ -131,24 +131,23 @@ class DormandPrinceMethod(Integrator):
         :param time: текущее время
         :return: (x, y, z, vx, vy, vz)
         """
-
-        self.k = np.array([[0, 0, 0, 0, 0, 0]])
+        self.k = np.array([np.zeros(6)])
         forces = self.calc_resultant_force(state, time)
+
         derivative = np.array([state[3], state[4], state[5], forces[0] / self.m, forces[1] / self.m,
                                forces[2] / self.m])
         self.k[0] = derivative
         for i in range(1, len(DormandPrinceMethod.c)):
-            new_k = self.evaluate(state, np.dot(DormandPrinceMethod.b[i], self.k), DormandPrinceMethod.c[i] * self.dt,
-                                  time)
+            new_k = self.evaluate(state, np.dot(DormandPrinceMethod.b[i], self.k), DormandPrinceMethod.c[i] * self.dt, time)
             self.k = np.append(self.k, [new_k],
                                axis=0)
 
         # calculating error
-        next_step1 = state + np.dot(DormandPrinceMethod.k1, self.k)
-        next_step2 = state + np.dot(DormandPrinceMethod.k2, self.k)
+        next_step1 = state + self.dt * DormandPrinceMethod.k1 @ self.k
+        next_step2 = state + self.dt * DormandPrinceMethod.k2 @ self.k
 
         error = np.abs(next_step1[0] - next_step2[0])
-        eps = 0.5
+        eps = 1
         # s = (eps * self.dt / 2 / error) ** 0.2
         if error > eps:
             self.dt = 0.5 * self.dt

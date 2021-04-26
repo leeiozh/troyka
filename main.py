@@ -1,16 +1,15 @@
 from forces import ResistForce, GravityForce, SunForce, OtherForce, TestForce
-from IntegrateMethods import RK4Method, EulerMethod1, EulerMethod2
+from IntegrateMethods import RK4Method, EulerMethod1, EulerMethod2, DormandPrinceMethod
 from astropy.time import Time
 import numpy as np
 import graphics
-import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
 
-mass = 1000
+
+mass = 1
 square = 0.2
 cx = 2
 time = Time('1999-01-01T00:00:00.123456789', format='isot', scale='utc')
-q = np.array([6600000, 0, 0, 0, 5000, 0])
+q = np.array([5400000, 0, 0, 0, 7800, 0])
 
 air_force = ResistForce(square, cx)
 g_force = GravityForce(mass)
@@ -20,42 +19,34 @@ test_force = TestForce()
 # testing
 
 delta_t = 1
-Forces = [g_force, air_force]
+Forces = [g_force]
 integrator1 = RK4Method(delta_t, mass, Forces)
-integrator2 = EulerMethod1(delta_t, mass, Forces)
-integrator3 = EulerMethod2(delta_t, mass, Forces)
+integrator2 = DormandPrinceMethod(delta_t, mass, Forces)
+integrator3 = EulerMethod1(delta_t, mass, Forces)
+integrator4 = EulerMethod2(delta_t, mass, Forces)
 
-mas_x = np.array([])
-mas_y = np.array([])
-mas_z = np.array([])
+integrator = integrator3   # you can change the method here
+
+position = np.array([[q[0], q[1], q[2]]], dtype=object)
+
 mas_vx = np.array([])
 mas_vy = np.array([])
 mas_vz = np.array([])
-mas_t = np.arange(30000) * delta_t
+clock = 0
+mas_t = np.array([0])
+mas_dt = np.array([])
 
-for i in range(30000):
-    mas_x = np.append(mas_x, q[0])
-    mas_y = np.append(mas_y, q[1])
-    mas_z = np.append(mas_z, q[2])
+while max(mas_t) < 30000:
+    pos = np.array([[q[0] / 25000, q[1] / 25000, q[2] / 25000]])
+    position = np.append(position, pos, axis=0)
+    # print(pos)
     mas_vx = np.append(mas_vx, q[3])
     mas_vy = np.append(mas_vx, q[4])
     mas_vz = np.append(mas_vx, q[5])
-    q = integrator1.calc_next_step(q, 0)  # you can change the method here
-
-# graphics.animation(mas_x / 50000, mas_y / 50000, delta_t)
-
-fig = plt.figure()
-ax = fig.add_subplot(projection='3d')
+    clock += integrator.dt
+    mas_t = np.append(mas_t, clock)
+    mas_dt = np.append(mas_dt, integrator.dt)
+    q = integrator.calc_next_step(q, 0)
 
 
-def anim(t):
-    ax.clear()
-    ax.plot(mas_x, mas_y, mas_z, color='red')
-    ax.scatter(mas_x[t], mas_y[t], mas_z[t], color='blue')
-    ax.scatter(0, 0, 0, color='green')
-
-
-ani = FuncAnimation(fig, anim, frames=len(mas_x) - 1)
-plt.show()
-
-# ani.save('3D.gif', writer='imagemagick')
+graphics.animation(position, delta_t)
