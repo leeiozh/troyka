@@ -61,3 +61,21 @@ def animation(x, y, coordinates, dt):
 
     pygame.quit()
 
+"""import numpy as np
+import geopandas as gpd
+import matplotlib.pyplot as plt
+from trasfomation import to_polar
+
+q = np.array([-1000000, -1, 0, 0, 7800, 0])
+world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+#graticules = gpd.read_file("ne_110m_graticules_10.shp")
+
+fig, ax = plt.subplots(figsize=(6, 5))
+
+world.plot(ax=ax, color="gray")
+
+#graticules.plot(ax=ax, color="lightgray", linewidth=0.5)
+
+ax.set(xlabel="Longitude(Degrees)",  ylabel="Latitude(Degrees)")
+ax.scatter(to_polar(q)[0], to_polar(q)[1])
+plt.show()"""

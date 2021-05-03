@@ -1,4 +1,4 @@
-from forces import ResistForce, GravityForce, SunForce, OtherForce, TestForce
+from forces import ResistForce, GravityForce, SunForce, TestForce
 from IntegrateMethods import RK4Method, EulerMethod1, EulerMethod2, DormandPrinceMethod
 from astropy.time import Time
 import numpy as np

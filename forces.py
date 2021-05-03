@@ -80,7 +80,7 @@ class ResistForce(BaseForce):
         else:
             x = int(height / 5000 - 30)
             return self.Atmosphere[x] * (height / 5000 - (x + 30)) + self.Atmosphere[x + 1] * (
-                        1 - (height - (x + 31) * 5000)) / 5000
+                    1 - (height - (x + 31) * 5000)) / 5000
 
     def calc(self, q, time):
         """
@@ -99,7 +99,10 @@ class ResistForce(BaseForce):
 
 
 class GravityForce(BaseForce):
-    GM = 4e14
+    """
+    class gravitation force
+    """
+    GM = 3.986004e+14
     mass = 0
 
     def __init__(self, mass):
@@ -117,6 +120,7 @@ class SunForce(BaseForce):
     """
     class sunlight pressure force
     """
+    AU = 1.49597871e+11
     Square = 0
     Wc = 4.556e-3
 
@@ -126,6 +130,24 @@ class SunForce(BaseForce):
         """
         self.Square = Square
 
+    def tapor(self, q, sun, r):
+        """
+        returns true if the satellite is in the shadow of the earth
+        :param q: satellite's coordinates
+        :param sun: sun's coordinates
+        :param r: distantion between sun and satellite
+        :return: is satellite in the shadow
+        """
+
+        l = (np.sqrt(q[0] ** 2 + q[1] ** 2 + q[2] ** 2))
+        h = (sun[0] ** 2 + sun[1] ** 2 + sun[2] ** 2) ** 0.5
+        sin_alpha = 6378100 / h
+        sin_beta = (1 - ((r ** 2 + h ** 2 - l ** 2) / 2 / r / h) ** 2) ** 0.5
+        if sin_beta < sin_alpha:
+            return True
+        else:
+            return False
+
     def calc(self, q, time):
         """
         calculate force
@@ -133,16 +155,12 @@ class SunForce(BaseForce):
         :param time: current time
         :return: force
         """
-        sun = get_sun(time).obsgeoloc.xyz
-        r = ((q[0] - sun[0].value) ** 2 + (q[1] - sun[1].value) ** 2 + (q[2] - sun[2].value) ** 2) ** 0.5
-        self.Force[0] = self.Wc * self.Square * (q[0] - sun[0].value) / r
-        self.Force[1] = self.Wc * self.Square * (q[1] - sun[1].value) / r
-        self.Force[2] = self.Wc * self.Square * (q[2] - sun[2].value) / r
-        return self.Force
-
-
-class OtherForce(BaseForce):
-    def calc(self, *args):
+        sun = np.array(get_sun(time).cartesian.xyz * self.AU)
+        r = ((q[0] - sun[0]) ** 2 + (q[1] - sun[1]) ** 2 + (q[2] - sun[2]) ** 2) ** 0.5
+        if self.tapor(q, sun, r):
+            self.Force[0] = self.Wc * self.Square * (q[0] - sun[0]) / r
+            self.Force[1] = self.Wc * self.Square * (q[1] - sun[1]) / r
+            self.Force[2] = self.Wc * self.Square * (q[2] - sun[2]) / r
         return self.Force
 
 
