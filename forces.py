@@ -109,7 +109,7 @@ class GravityForce(BaseForce):
         self.mass = mass
 
     def calc(self, q, time):
-        r = (q[0] ** 2 + q[1] ** 2 + q[2] ** 2) ** 0.5
+        r = np.linalg.norm(q[0:3])
         self.Force[0] = - self.GM * self.mass * q[0] / r ** 3
         self.Force[1] = - self.GM * self.mass * q[1] / r ** 3
         self.Force[2] = - self.GM * self.mass * q[2] / r ** 3
