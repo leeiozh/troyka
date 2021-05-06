@@ -22,6 +22,7 @@ def animation(x, y, coordinates, dt):
     plt.xlabel("time, sec")
     plt.ylabel("x, m")
     plt.grid()
+    plot_surf = pygame.image.load("plot.png")
     while not finished:
         if r % 120 == 0:
             plt.plot(x[r - 4 * dr:r], y[r - 4 * dr:r], 'r')
@@ -64,8 +65,13 @@ def animation(x, y, coordinates, dt):
     pygame.quit()
 
 
-def animation_map(q):
-
+def animation_map(q, dt):
+    """
+    draw main window with map and 3d visualization
+    :param q: satellite's coordinates
+    :return: picture
+    """
+    fig, ax = plt.subplots(figsize=(6, 5))
     pygame.init()
     display_size = (1200, 800)
     screen = pygame.display.set_mode(display_size)
@@ -73,8 +79,8 @@ def animation_map(q):
     scale = 0.00002
     dx = 0
     dy = 0
-    r = 1
-    dr = 10
+    dr = dt
+    r = dr
     coord_x = [to_polar(q[0])[0]]
     coord_y = [to_polar(q[0])[1]]
     clock = pygame.time.Clock()
@@ -87,7 +93,6 @@ def animation_map(q):
             coord_x.append(to_polar(q[r])[0])
             coord_y.append(to_polar(q[r])[1])
 
-        fig, ax = plt.subplots(figsize=(6, 5))
         make_plot(fig, ax, coord_x, coord_y, clock)
         plot_surf = pygame.image.load("plot_map.png")
 
@@ -104,6 +109,7 @@ def animation_map(q):
 
         print_gcrs_coord(screen, display_size, q[r])
         print_kepler_coord(screen, display_size, q[r])
+        print_speed(dr, screen, display_size)
 
         # time.sleep(dt)
         pygame.display.update()
@@ -123,6 +129,12 @@ def animation_map(q):
             dx += 2
         if keys[pygame.K_LEFT]:
             dx -= 2
+        if keys[pygame.K_KP_PLUS]:
+            dr += 20
+        if keys[pygame.K_KP_MINUS]:
+            dr -= 20
+            if dr < 20:
+                dr = 1
 
         if r > len(q) - 1:
             finished = True
@@ -150,6 +162,13 @@ def make_plot(fig, ax, coord_x, coord_y, clock):
 
 
 def print_gcrs_coord(screen, display_size, q):
+    """
+    print satellite's coordinates in GCRS
+    :param screen: output's surface
+    :param display_size: display's size
+    :param q: satellite's coordinates
+    :return: print a coordinates
+    """
     font = pygame.font.Font(None, 25)
     font_color = (255, 255, 255)
     screen.blit(font.render("Satellite's coordinates in GCRS:", True, font_color), [display_size[0] * 0.55, display_size[1] * 0.05])
@@ -164,17 +183,40 @@ def print_gcrs_coord(screen, display_size, q):
 
 
 def print_kepler_coord(screen, display_size, q):
+    """
+    convert and print satellite's coordinates in Keplerian parameters
+    :param screen: output's surface
+    :param display_size: display's size
+    :param q: satellite's coordinates
+    :return: print a coordinates
+    """
     font = pygame.font.Font(None, 25)
     font_color = (255, 255, 255)
-    screen.blit(font.render("Satellite's coordinates in Kepler:", True, font_color), [display_size[0] * 0.55, display_size[1] * 0.7])
+    screen.blit(font.render("Satellite's coordinates in Kepler:", True, font_color),
+                [display_size[0] * 0.55, display_size[1] * 0.7])
 
     q = to_kepler(q)
 
     text_surface = [font.render("Semimajor axis a = {0:0.2f} m".format(q[0]), True, font_color),
                     font.render("Eccentricity e = {0:0.2f}".format(q[1]), True, font_color),
                     font.render("Inclination i = {0:0.2f}".format(q[2] / np.pi * 180), True, font_color),
-                    font.render("Longitude of the ascending node O = {0:0.2f}".format(q[3] / np.pi * 180), True, font_color),
+                    font.render("Longitude of the ascending node O = {0:0.2f}".format(q[3] / np.pi * 180),
+                                True, font_color),
                     font.render("Argument of periapsis o = {0:0.2f}".format(q[4] / np.pi * 180), True, font_color),
                     font.render("True anomaly th = {0:0.2f}".format(q[5] / np.pi * 180), True, font_color)]
     for i in range(6):
         screen.blit(text_surface[i], [display_size[0] * 0.6, display_size[1] * 0.75 + i * 20])
+
+
+def print_speed(dr, screen, display_size):
+    """
+    print visualization's speed
+    :param dr: visualization's step
+    :param screen: screen
+    :param display_size: display size
+    :return: printed speed
+    """
+    font = pygame.font.Font(None, 25)
+    font_color = (0, 0, 0)
+    screen.blit(font.render("Speed visualization: {}".format(dr), True, font_color),
+                [display_size[0] * 0.05, display_size[1] * 0.05])

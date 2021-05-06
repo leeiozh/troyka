@@ -68,17 +68,32 @@ def to_kepler(q):
 
     e = f / mu
 
+    if np.abs(e) > 1:
+        e = 1
+
     omega = np.arccos((f1 * np.cos(Omega) + f2 * np.sin(Omega)) / f)
     sin_omega = np.arcsin(f3 / f / np.sin(i))
     if sin_omega < 0:
         omega *= -1
 
-    theta = np.arccos((p - r) / e / r)
+    if (p - r) / e / r > 1:
+        theta = np.arccos(1)
+    elif (p - r) / e / r < -1:
+        theta = np.arccos(-1)
+    else:
+        theta = np.arccos((p - r) / e / r)
+
     sin_theta = D * np.sqrt(p / mu) / e / r
     if sin_theta < 0:
         theta *= -1
 
-    E = np.arccos((e + np.cos(theta)) / (1 + e * np.cos(theta)))
+    if (e + np.cos(theta)) / (1 + e * np.cos(theta)) > 1:
+        E = np.arccos(1)
+    elif (e + np.cos(theta)) / (1 + e * np.cos(theta)) < -1:
+        E = np.arccos(-1)
+    else:
+        E = np.arccos((e + np.cos(theta)) / (1 + e * np.cos(theta)))
+
     sin_E = np.sqrt(1 - e ** 2) * np.sin(theta) / (1 + e * np.cos(theta))
     if sin_E < 0:
         E *= -1
