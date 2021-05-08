@@ -1,5 +1,5 @@
 import pygame
-from trasformation import print_kepler
+from trasfomation import print_kepler, to_kepler, to_polar
 
 pygame.init()
 
@@ -17,7 +17,7 @@ text_1 = font.render("Semimajor axis a =" + q[0] / 1000 + "km", True, green, blu
 text_1Rect = text_1.get_rect()
 text_1Rect.center = (X // 3, Y // 6)
 
-text_2 = font.render(print_kepler(q), True, green, blue)
+text_2 = font.render("Eccentricity e =" + q[1], True, green, blue)
 text_2Rect = text_2.get_rect()
 text_2Rect.center = (X // 3, Y // 3)
 
