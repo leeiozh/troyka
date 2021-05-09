@@ -1,5 +1,4 @@
 import pygame
-import numpy as np
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,6 +10,8 @@ FPS = 30
 YELLOW = (255, 200, 0)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
+FIELD_WIDTH = 200
+FIELD_HEIGHT = 40
 
 
 class Window:
@@ -32,11 +33,22 @@ class Menu(Window):
         self.buttons = []
         self.positions = []
         self.screen = screen
-        self.create_text("Launch your satellite!", WHITE, (250, 50), 100, self.screen)
-        self.create_text("Start", WHITE, (250, 250), 80, self.screen)
-        self.create_text("Parameters", WHITE, (250, 400), 80, self.screen)
-        self.create_text("Exit", WHITE, (250, 550), 80, self.screen)
-        self.colors = [WHITE, WHITE, WHITE, WHITE]
+        self.create_text("x:", WHITE, (250, 150), 50, self.screen)
+        self.create_text("y:", WHITE, (250, 250), 50, self.screen)
+        self.create_text("z:", WHITE, (250, 350), 50, self.screen)
+        self.create_text("vx:", WHITE, (700, 150), 50, self.screen)
+        self.create_text("vy:", WHITE, (700, 250), 50, self.screen)
+        self.create_text("vz:", WHITE, (700, 350), 50, self.screen)
+        self.field_x = InsertField(0, 300, 150, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
+        self.field_y = InsertField(0, 300, 250, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
+        self.field_z = InsertField(0, 300, 350, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
+        self.field_vx = InsertField(0, 750, 150, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
+        self.field_vy = InsertField(0, 750, 250, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
+        self.field_vz = InsertField(0, 750, 350, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
+        self.field_integrator = ChoiceField(250, 450, ["EulerMethod", "RK4Method", "DormandPrinceMethod"], screen)
+        self.insert_fields = np.array([self.field_x, self.field_y, self.field_z, self.field_vx, self.field_vy,
+                                       self.field_vz])
+        self.choice_fields = np.array([self.field_integrator])
 
     def run(self):
         finished = False
@@ -48,37 +60,44 @@ class Menu(Window):
                     finished = True
                     return 0
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    mouse_pos = pygame.mouse.get_pos()
-                    if 250 < mouse_pos[0] < 400 and 250 < mouse_pos[1] < 300:
-                        return 1
-                    if 250 < mouse_pos[0] < 400 and 401 < mouse_pos[1] < 450:
-                        return 2
-                    if 250 < mouse_pos[0] < 400 and 550 < mouse_pos[1] < 600:
-                        return 3
+                    for f in self.insert_fields:
+                        if f.check_mouse():
+                            f.activate()
+                        else:
+                            f.disactivate()
+
+                    for f in self.choice_fields:
+                        f.check_mouse()
+
+                if event.type == pygame.KEYDOWN:
+                    for f in self.insert_fields:
+                        if event.key == 13:
+                            f.disactivate()
+                        if event.key == pygame.K_BACKSPACE:
+                            if f.is_active and f.value != "":
+                                f.value = f.value[:-2]
+                                f.value += "|"
+                        else:
+                            if len(f.value) < 13:
+                                f.insert(event.unicode)
 
             mouse_pos = pygame.mouse.get_pos()
-            if 250 < mouse_pos[0] < 400 and 250 < mouse_pos[1] < 300:
-                self.colors[1] = YELLOW
-            else:
-                self.colors[1] = WHITE
-            if 250 < mouse_pos[0] < 400 and 401 < mouse_pos[1] < 450:
-                self.colors[2] = YELLOW
-            else:
-                self.colors[2] = WHITE
-            if 250 < mouse_pos[0] < 400 and 550 < mouse_pos[1] < 600:
-                self.colors[3] = YELLOW
-            else:
-                self.colors[3] = WHITE
             self.draw_objects()
             pygame.display.update()
             self.screen.fill(BLACK)
 
     def draw_objects(self):
-        self.create_text("Launch your satellite!", self.colors[0], (250, 50), 100, self.screen)
-        self.create_text("Start", self.colors[1], (250, 250), 80, self.screen)
-        self.create_text("Parameters", self.colors[2], (250, 400), 80, self.screen)
-        self.create_text("Exit", self.colors[3], (250, 550), 80, self.screen)
-
+        self.create_text("x:", WHITE, (250, 150), 50, self.screen)
+        self.create_text("y:", WHITE, (250, 250), 50, self.screen)
+        self.create_text("z:", WHITE, (250, 350), 50, self.screen)
+        self.create_text("vx:", WHITE, (690, 150), 50, self.screen)
+        self.create_text("vy:", WHITE, (690, 250), 50, self.screen)
+        self.create_text("vz:", WHITE, (690, 350), 50, self.screen)
+        self.create_text("Launch your satellite!", WHITE, (250, 50), 100, self.screen)
+        for f in self.insert_fields:
+            f.draw()
+        for f in self.choice_fields:
+            f.draw()
 
 class Animation(Window):
 
@@ -193,6 +212,89 @@ class LoadingWindow(Window):
                              100, self.screen)
             pygame.display.update()
             self.screen.fill(BLACK)
+
+
+class Field:
+
+    @abstractmethod
+    def draw(self):
+        pass
+
+    def create_text(self, text, color, position, size, screen):
+        f1 = pygame.font.Font(None, size)
+        text1 = f1.render(text, True,
+                          color, WHITE)
+        screen.blit(text1, position)
+
+
+class InsertField(Field):
+
+    def __init__(self, value, x, y, width, height, screen):
+        self.is_active = False
+        self.value = str(value)
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.screen = screen
+
+    def draw(self):
+        pygame.draw.rect(self.screen, WHITE, (self.x, self.y, self.width, self.height))
+        self.create_text(self.value, BLACK, (self.x + 7, self.y + 7), 40, self.screen)
+
+    def insert(self, char):
+        if self.is_active:
+            self.value = self.value[:-1]
+            self.value += str(char)
+            self.value += "|"
+
+    def activate(self):
+        if not self.is_active:
+            self.is_active = True
+            self.value += "|"
+
+    def disactivate(self):
+        if self.is_active:
+            self.value = self.value[:-1]
+            self.is_active = False
+
+    def check_mouse(self):
+        if self.x < pygame.mouse.get_pos()[0] < self.x + self.width and self.y < pygame.mouse.get_pos()[1] < self.y + self.height:
+            return True
+        else:
+            return False
+
+
+class ChoiceField(Field):
+
+    def __init__(self, x, y, elements, screen):
+        self.choice = 0
+        self.elements = elements
+        self.x = x
+        self.y = y
+        self.screen = screen
+
+    def check_mouse(self):
+        mouse_pos = pygame.mouse.get_pos()
+        if self.x < mouse_pos[0] < self.x + 15 and self.y < mouse_pos[1] < self.y + 40:
+            if self.choice > 0:
+                self.choice -= 1
+            else:
+                self.choice = len(self.elements) - 1
+        elif self.x + 15 * (len(self.elements[self.choice]) + 3) < mouse_pos[0] < self.x + 15 * (len(self.elements[self.choice]) + 6) and self.y < mouse_pos[1] < self.y + 40:
+            if self.choice < len(self.elements) - 1:
+                self.choice += 1
+            else:
+                self.choice = 0
+
+    def draw(self):
+        self.create_text("< " + self.elements[self.choice] + " >", WHITE, (self.x, self.y), 40, self.screen)
+
+    def create_text(self, text, color, position, size, screen):
+        f1 = pygame.font.Font(None, size)
+        text1 = f1.render(text, True,
+                          color, BLACK)
+        screen.blit(text1, position)
 
 
 def animation_map(q, dt):

@@ -19,7 +19,7 @@ test_force = TestForce()
 
 # testing
 
-delta_t = 10
+delta_t = 1
 Forces = [g_force]
 integrator1 = RK4Method(delta_t, mass, Forces)
 integrator2 = DormandPrinceMethod(delta_t, mass, Forces)
