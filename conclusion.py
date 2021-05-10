@@ -1,4 +1,5 @@
 import pygame
+import numpy as np
 from trasfomation import print_kepler, to_kepler, to_polar
 
 pygame.init()
@@ -8,6 +9,8 @@ green = (0, 255, 0)
 blue = (0, 0, 128)
 X = 400
 Y = 400
+
+q = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
 display_surface = pygame.display.set_mode((X, Y))
 pygame.display.set_caption('Show Text')

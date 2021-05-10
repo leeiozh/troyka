@@ -13,7 +13,7 @@ if not parameters[len(parameters) - 1]:
     a = load.run()
     if a:
         axis = ['x, m', 'y, m', 'z, m', 'vx, m/s', 'vy, m/s', 'vz, m/s', 't, s']
-        anim = graphics.Animation(load.mas_x, load.mas_y, load.position, screen, 1,
+        anim = graphics.Animation(load.mas_x, load.mas_y, load.position, load.output, screen, 1,
                                   axis[load.x_axis], axis[load.y_axis])
         anim.run()
 pygame.quit()

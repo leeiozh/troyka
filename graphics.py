@@ -7,6 +7,7 @@ from trasfomation import to_kepler, to_polar
 from forces import ResistForce, GravityForce, SunForce, TestForce
 from IntegrateMethods import RK4Method, EulerMethod1, EulerMethod2, DormandPrinceMethod
 from astropy.time import Time
+
 FPS = 30
 
 YELLOW = (255, 200, 0)
@@ -169,18 +170,20 @@ class Menu(Window):
 
 class Animation(Window):
 
-    def __init__(self, x, y, coordinates, screen, delta_t, x_axis, y_axis):
+    def __init__(self, x, y, coordinates, output, screen, delta_t, x_axis, y_axis):
         self.matrix = np.array([[0, -0.5], [-1, -0.3], [1, 1]])
+        self.display = (1200, 800)
         self.finished = False
         self.dt = delta_t
         self.dx = 0
         self.dy = 0
         self.counter = 0
         self.plot_step = 10
-        self.acceleration = 10
+        self.acceleration = 6
         self.x = x
         self.y = y
         self.coordinates = coordinates
+        self.input = output
         self.screen = screen
         self.plot_w = 400
         self.plot_h = 300
@@ -197,9 +200,11 @@ class Animation(Window):
             # if self.counter % self.plot_step == 0:
             #     self.plot()
             self.draw_objects()
-            #time.sleep(self.dt)
+            # time.sleep(self.dt)
             self.counter += self.acceleration
             self.plot(self.x, self.y, self.counter, self.x_axis, self.y_axis)
+            self.print_kepler_coord(self.screen, self.display, self.input[self.counter:self.counter + 6])
+            self.print_gcrs_coord(self.screen, self.display, self.input[self.counter:self.counter + 6])
             pygame.display.update()
             self.screen.fill(WHITE)
             for event in pygame.event.get():
@@ -245,17 +250,65 @@ class Animation(Window):
         x = x[0:counter]
         y = y[0:counter]
         for i in range(len(x) - 2):
-            pygame.draw.line(self.screen, (255, 0, 0), (x[i], y[i]), (x[i+1], y[i+1]), 5)
+            pygame.draw.line(self.screen, (255, 0, 0), (x[i], y[i]), (x[i + 1], y[i + 1]), 5)
 
     def draw_objects(self):
         new_co = self.coordinates[self.counter] @ self.matrix
         pygame.draw.polygon(self.screen, [0, 0, 0], ([self.screen.get_width() / 2, 0], [self.screen.get_width(), 0],
-                                                         [self.screen.get_width(), self.screen.get_height()],
-                                                         [self.screen.get_width() / 2, self.screen.get_height()]))
-        pygame.draw.circle(self.screen, [255, 255, 255], [self.screen.get_width() * 0.75 + self.dx,
+                                                     [self.screen.get_width(), self.screen.get_height()],
+                                                     [self.screen.get_width() / 2, self.screen.get_height()]))
+        pygame.draw.circle(self.screen, [0, 255, 255], [self.screen.get_width() * 0.75 + self.dx,
                                                           self.screen.get_height() / 2 + self.dy], 20)
         pygame.draw.circle(self.screen, [255, 255, 255], [self.screen.get_width() * 0.75 + new_co[0] + self.dx,
                                                           self.screen.get_height() / 2 + new_co[1] + self.dy], 10)
+
+    @staticmethod
+    def print_gcrs_coord(screen, display_size, q):
+        """
+        print satellite's coordinates in GCRS
+        :param screen: output's surface
+        :param display_size: display's size
+        :param q: satellite's coordinates
+        :return: print a coordinates
+        """
+        font = pygame.font.Font(None, 25)
+        font_color = (255, 255, 255)
+        screen.blit(font.render("Satellite's coordinates in GCRS:", True, font_color),
+                    [display_size[0] * 0.55, display_size[1] * 0.05])
+        text_surface = [font.render("X = {0:0.2f} m".format(q[0]), True, font_color),
+                        font.render("Y = {0:0.2f} m".format(q[1]), True, font_color),
+                        font.render("Z = {0:0.2f} m".format(q[2]), True, font_color),
+                        font.render("Vx = {0:0.2f} m/s".format(q[3]), True, font_color),
+                        font.render("Vy = {0:0.2f} m/s".format(q[4]), True, font_color),
+                        font.render("Vz = {0:0.2f} m/s".format(q[5]), True, font_color)]
+        for i in range(6):
+            screen.blit(text_surface[i], [display_size[0] * 0.6, display_size[1] * 0.1 + i * 20])
+
+    @staticmethod
+    def print_kepler_coord(screen, display_size, q):
+        """
+        convert and print satellite's coordinates in Keplerian parameters
+        :param screen: output's surface
+        :param display_size: display's size
+        :param q: satellite's coordinates
+        :return: print a coordinates
+        """
+        font = pygame.font.Font(None, 25)
+        font_color = (255, 255, 255)
+        screen.blit(font.render("Satellite's coordinates in Kepler:", True, font_color),
+                    [display_size[0] * 0.55, display_size[1] * 0.7])
+
+        q = to_kepler(q)
+
+        text_surface = [font.render("Semimajor axis a = {0:0.2f} m".format(q[0]), True, font_color),
+                        font.render("Eccentricity e = {0:0.2f}".format(q[1]), True, font_color),
+                        font.render("Inclination i = {0:0.2f}".format(q[2] / np.pi * 180), True, font_color),
+                        font.render("Longitude of the ascending node O = {0:0.2f}".format(q[3] / np.pi * 180),
+                                    True, font_color),
+                        font.render("Argument of periapsis o = {0:0.2f}".format(q[4] / np.pi * 180), True, font_color),
+                        font.render("True anomaly th = {0:0.2f}".format(q[5] / np.pi * 180), True, font_color)]
+        for i in range(6):
+            screen.blit(text_surface[i], [display_size[0] * 0.6, display_size[1] * 0.75 + i * 20])
 
 
 class LoadingWindow(Window):
@@ -283,6 +336,7 @@ class LoadingWindow(Window):
             self.integrator.forces = np.append(self.integrator.forces, forces[i])
         self.duration = param[6]
         self.q = np.array([param[0], param[1], param[2], param[3], param[4], param[5]])
+        self.output = np.array([[self.q]])
         self.position = np.array([[self.q[0], self.q[1], self.q[2]]], dtype=object)
 
     def run(self):
@@ -309,6 +363,7 @@ class LoadingWindow(Window):
             self.mas_t = np.append(self.mas_t, self.clock)
             self.mas_dt = np.append(self.mas_dt, self.integrator.dt)
             self.q = self.integrator.calc_next_step(self.q, 0)
+            self.output = np.append(self.output, np.array([self.q]))
             if max(self.mas_t) > self.duration:
                 return 1
 
@@ -366,7 +421,8 @@ class InsertField(Field):
             self.is_active = False
 
     def check_mouse(self):
-        if self.x < pygame.mouse.get_pos()[0] < self.x + self.width and self.y < pygame.mouse.get_pos()[1] < self.y + self.height:
+        if self.x < pygame.mouse.get_pos()[0] < self.x + self.width and self.y < pygame.mouse.get_pos()[
+            1] < self.y + self.height:
             return True
         else:
             return False
@@ -388,7 +444,8 @@ class ChoiceField(Field):
                 self.choice -= 1
             else:
                 self.choice = len(self.elements) - 1
-        elif self.x + 15 * (len(self.elements[self.choice]) + 2) < mouse_pos[0] < self.x + 15 * (len(self.elements[self.choice]) + 6) and self.y < mouse_pos[1] < self.y + 40:
+        elif self.x + 15 * (len(self.elements[self.choice]) + 2) < mouse_pos[0] < self.x + 15 * (
+                len(self.elements[self.choice]) + 6) and self.y < mouse_pos[1] < self.y + 40:
             if self.choice < len(self.elements) - 1:
                 self.choice += 1
             else:
@@ -450,83 +507,6 @@ class Button(Field):
             return False
 
 
-def animation_map(q, dt):
-    """
-    draw main window with map and 3d visualization
-    :param q: satellite's coordinates
-    :return: picture
-    """
-    fig, ax = plt.subplots(figsize=(6, 5))
-    pygame.init()
-    display_size = (1200, 800)
-    screen = pygame.display.set_mode(display_size)
-    finished = False
-    scale = 0.00002
-    dx = 0
-    dy = 0
-    dr = dt
-    r = dr
-    coord_x = [to_polar(q[0])[0]]
-    coord_y = [to_polar(q[0])[1]]
-    clock = pygame.time.Clock()
-    while not finished:
-        coord_x.append(to_polar(q[r])[0])
-        coord_y.append(to_polar(q[r])[1])
-        if coord_x[-1] * coord_x[-2] < 0:
-            coord_x.clear()
-            coord_y.clear()
-            coord_x.append(to_polar(q[r])[0])
-            coord_y.append(to_polar(q[r])[1])
-
-        make_plot(fig, ax, coord_x, coord_y, clock)
-        plot_surf = pygame.image.load("plot_map.png")
-
-        plot_rect = plot_surf.get_rect(bottomright=(625, 475))
-        screen.blit(plot_surf, plot_rect)
-
-        new_co = q[r][:2]
-        pygame.draw.polygon(screen, [0, 0, 0], ([display_size[0] / 2, 0], [display_size[0], 0],
-                                                [display_size[0], display_size[1]],
-                                                [display_size[0] / 2, display_size[1]]))
-        pygame.draw.circle(screen, [124, 252, 0], [display_size[0] * 0.75 + dx, display_size[1] / 2 + dy], 20)
-        pygame.draw.circle(screen, [255, 255, 255], [display_size[0] * 0.75 + int(scale * new_co[0]) + dx,
-                                                     display_size[1] / 2 + int(scale * new_co[1]) + dy], 10)
-
-        print_gcrs_coord(screen, display_size, q[r])
-        print_kepler_coord(screen, display_size, q[r])
-        print_speed(dr, screen, display_size)
-
-        # time.sleep(dt)
-        pygame.display.update()
-        screen.fill([255, 255, 255])
-        r += dr
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                finished = True
-
-        keys = pygame.key.get_pressed()
-
-        if keys[pygame.K_DOWN]:
-            dy += 2
-        if keys[pygame.K_UP]:
-            dy -= 2
-        if keys[pygame.K_RIGHT]:
-            dx += 2
-        if keys[pygame.K_LEFT]:
-            dx -= 2
-        if keys[pygame.K_KP_PLUS]:
-            dr += 20
-        if keys[pygame.K_KP_MINUS]:
-            dr -= 20
-            if dr < 20:
-                dr = 1
-
-        if r > len(q) - 1:
-            finished = True
-
-    pygame.quit()
-
-
 def make_plot(fig, ax, coord_x, coord_y, clock):
     """
     draw a plot
@@ -537,60 +517,13 @@ def make_plot(fig, ax, coord_x, coord_y, clock):
     """
     world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
     world.plot(ax=ax, color="gray")
-    ax.set(xlabel="Longitude(Degrees)",  ylabel="Latitude(Degrees)")
+    ax.set(xlabel="Longitude(Degrees)", ylabel="Latitude(Degrees)")
     for i in range(-90, 91, 15):
         ax.plot([i * 2, i * 2], [-90, 90], color="lightgray", linewidth=0.4)
         ax.plot([-180, 180], [i, i], color="lightgray", linewidth=0.4)
     plt.plot(coord_x, coord_y, color="red")
     plt.savefig("plot_map.png")
     clock.tick(FPS)
-
-
-def print_gcrs_coord(screen, display_size, q):
-    """
-    print satellite's coordinates in GCRS
-    :param screen: output's surface
-    :param display_size: display's size
-    :param q: satellite's coordinates
-    :return: print a coordinates
-    """
-    font = pygame.font.Font(None, 25)
-    font_color = (255, 255, 255)
-    screen.blit(font.render("Satellite's coordinates in GCRS:", True, font_color), [display_size[0] * 0.55, display_size[1] * 0.05])
-    text_surface = [font.render("X = {0:0.2f} m".format(q[0]), True, font_color),
-                    font.render("Y = {0:0.2f} m".format(q[1]), True, font_color),
-                    font.render("Z = {0:0.2f} m".format(q[2]), True, font_color),
-                    font.render("Vx = {0:0.2f} m/s".format(q[3]), True, font_color),
-                    font.render("Vy = {0:0.2f} m/s".format(q[4]), True, font_color),
-                    font.render("Vz = {0:0.2f} m/s".format(q[5]), True, font_color)]
-    for i in range(6):
-        screen.blit(text_surface[i], [display_size[0] * 0.6, display_size[1] * 0.1 + i * 20])
-
-
-def print_kepler_coord(screen, display_size, q):
-    """
-    convert and print satellite's coordinates in Keplerian parameters
-    :param screen: output's surface
-    :param display_size: display's size
-    :param q: satellite's coordinates
-    :return: print a coordinates
-    """
-    font = pygame.font.Font(None, 25)
-    font_color = (255, 255, 255)
-    screen.blit(font.render("Satellite's coordinates in Kepler:", True, font_color),
-                [display_size[0] * 0.55, display_size[1] * 0.7])
-
-    q = to_kepler(q)
-
-    text_surface = [font.render("Semimajor axis a = {0:0.2f} m".format(q[0]), True, font_color),
-                    font.render("Eccentricity e = {0:0.2f}".format(q[1]), True, font_color),
-                    font.render("Inclination i = {0:0.2f}".format(q[2] / np.pi * 180), True, font_color),
-                    font.render("Longitude of the ascending node O = {0:0.2f}".format(q[3] / np.pi * 180),
-                                True, font_color),
-                    font.render("Argument of periapsis o = {0:0.2f}".format(q[4] / np.pi * 180), True, font_color),
-                    font.render("True anomaly th = {0:0.2f}".format(q[5] / np.pi * 180), True, font_color)]
-    for i in range(6):
-        screen.blit(text_surface[i], [display_size[0] * 0.6, display_size[1] * 0.75 + i * 20])
 
 
 def print_speed(dr, screen, display_size):
