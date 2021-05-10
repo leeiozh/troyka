@@ -73,7 +73,7 @@ class Menu(Window):
                                        self.field_vz, self.field_t, self.field_step])
         self.choice_fields = np.array([self.field_integrator, self.field_xplot, self.field_yplot])
         self.click_fields = np.array([self.air_force_click, self.sun_force_click])
-        self.start_button = Button(500, 700, 200, 70, "Start!", screen)
+        self.start_button = Button(500, 670, 200, 70, "Start!", screen)
 
     def run(self):
         """
@@ -152,8 +152,8 @@ class Menu(Window):
         self.create_text("m/s", WHITE, (col4_x + FIELD_WIDTH + 20, 300), 50, self.screen)
         self.create_text("s", WHITE, (col4_x + FIELD_WIDTH + 20, 375), 50, self.screen)
         self.create_text("Launch your satellite!", WHITE, (330, 25), 80, self.screen)
-        self.create_text("Choose start parameters:", YELLOW, (150, 100), 50, self.screen)
-        self.create_text("integrator: ", YELLOW, (col1_x, 450), 50, self.screen)
+        self.create_text("Choose start parameters:", YELLOW, (150, 90), 50, self.screen)
+        self.create_text("Integrator: ", YELLOW, (col1_x, 450), 50, self.screen)
         self.create_text("Plot:", YELLOW, (col3_x, 450), 50, self.screen)
         self.create_text("x-axis ", WHITE, (col4_x, 450), 50, self.screen)
         self.create_text("y-axis ", WHITE, (col4_x, 500), 50, self.screen)
