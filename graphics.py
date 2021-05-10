@@ -4,7 +4,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from abc import abstractmethod
 from trasfomation import to_kepler, to_polar
-import time
+from forces import ResistForce, GravityForce, SunForce, TestForce
+from IntegrateMethods import RK4Method, EulerMethod1, EulerMethod2, DormandPrinceMethod
+from astropy.time import Time
 FPS = 30
 
 YELLOW = (255, 200, 0)
@@ -16,6 +18,23 @@ col1_x = 150
 col2_x = 250
 col3_x = 700
 col4_x = 810
+
+mass = 1
+square = 0.2
+cx = 1
+time = Time('1999-01-01T00:00:00.123456789', format='isot', scale='utc')
+
+integrator1 = EulerMethod2(0, mass, 0)
+integrator2 = RK4Method(0, mass, 0)
+integrator3 = DormandPrinceMethod(0, mass, 0)
+
+integrators = [integrator1, integrator2, integrator3]
+
+g_force = GravityForce(mass)
+air_force = ResistForce(square, cx)
+sun_force = SunForce(square)
+
+forces = [g_force, air_force, sun_force]
 
 
 class Window:
@@ -37,22 +56,35 @@ class Menu(Window):
         self.buttons = []
         self.positions = []
         self.screen = screen
-        self.field_x = InsertField(0, col2_x, 150, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
-        self.field_y = InsertField(0, col2_x, 250, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
-        self.field_z = InsertField(0, col2_x, 350, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
-        self.field_t = InsertField(0, col2_x, 450, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
+        self.field_x = InsertField(6700000, col2_x, 150, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
+        self.field_y = InsertField(0, col2_x, 225, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
+        self.field_z = InsertField(0, col2_x, 300, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
+        self.field_t = InsertField(5000, col2_x, 375, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
         self.field_vx = InsertField(0, col4_x, 150, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
-        self.field_vy = InsertField(0, col4_x, 250, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
-        self.field_vz = InsertField(0, col4_x, 350, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
-        self.field_step = InsertField(0, col4_x, 450, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
-        self.field_integrator = ChoiceField(col1_x + 200, 555, ["EulerMethod", "RK4Method", "DorPrMethod"], screen)
-        self.field_xplot = ChoiceField(col4_x + 200, 530, ["x", "y", "z", "vx", "vy", "vz", "time"], screen)
-        self.field_yplot = ChoiceField(col4_x + 200, 580, ["x", "y", "z", "vx", "vy", "vz", "time"], screen)
+        self.field_vy = InsertField(6780, col4_x, 225, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
+        self.field_vz = InsertField(0, col4_x, 300, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
+        self.field_step = InsertField(10, col4_x, 375, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
+        self.field_integrator = ChoiceField(col1_x + 200, 455, ["EulerMethod", "RK4Method", "DorPrMethod"], screen, 1)
+        self.field_xplot = ChoiceField(col4_x + 200, 455, ["x", "y", "z", "vx", "vy", "vz", "time"], screen, 6)
+        self.field_yplot = ChoiceField(col4_x + 200, 505, ["x", "y", "z", "vx", "vy", "vz", "time"], screen)
+        self.air_force_click = ClickField(col1_x, 575, self.screen)
+        self.sun_force_click = ClickField(col1_x, 625, self.screen)
         self.insert_fields = np.array([self.field_x, self.field_y, self.field_z, self.field_vx, self.field_vy,
                                        self.field_vz, self.field_t, self.field_step])
         self.choice_fields = np.array([self.field_integrator, self.field_xplot, self.field_yplot])
+        self.click_fields = np.array([self.air_force_click, self.sun_force_click])
+        self.start_button = Button(500, 700, 200, 70, "Start!", screen)
 
     def run(self):
+        """
+        Returns parameters as an np.array([x, y, z, vx, vy, vz, time, step,
+         x-axis, y-axis, air_force, sun_force, integrator, is_finished)
+         axis: 0 -- x, 1 -- y, 2 -- z, 3 -- vx, 4 -- vy, 5 -- vz, 6 -- time
+         forces: bool variables
+         integrator: 0 -- Euler, 1 -- RK4, 2 -- Dormand-Prince
+         is_finished: True if stop, False if go next
+        :return:
+        """
         finished = False
         clock = pygame.time.Clock()
         while not finished:
@@ -60,7 +92,7 @@ class Menu(Window):
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     finished = True
-                    return 0
+                    return np.array([True])
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     for f in self.insert_fields:
                         if f.check_mouse():
@@ -70,6 +102,19 @@ class Menu(Window):
 
                     for f in self.choice_fields:
                         f.check_mouse()
+
+                    for f in self.click_fields:
+                        f.check_mouse()
+
+                    if self.start_button.check_mouse():
+                        answer = [float(self.field_x.value), float(self.field_y.value), float(self.field_z.value),
+                                  float(self.field_vx.value), float(self.field_vy.value), float(self.field_vz.value),
+                                  float(self.field_t.value), float(self.field_step.value),
+                                  self.field_xplot.choice, self.field_yplot.choice,
+                                  self.air_force_click.is_active, self.sun_force_click.is_active,
+                                  self.field_integrator.choice, False]
+                        print(answer)
+                        return answer
 
                 if event.type == pygame.KEYDOWN:
                     for f in self.insert_fields:
@@ -84,36 +129,43 @@ class Menu(Window):
                                 f.insert(event.unicode)
 
             mouse_pos = pygame.mouse.get_pos()
+            self.start_button.check_mouse()
             self.draw_objects()
             pygame.display.update()
             self.screen.fill(BLACK)
 
     def draw_objects(self):
         self.create_text("x:", WHITE, (col1_x, 150), 50, self.screen)
-        self.create_text("y:", WHITE, (col1_x, 250), 50, self.screen)
-        self.create_text("z:", WHITE, (col1_x, 350), 50, self.screen)
+        self.create_text("y:", WHITE, (col1_x, 225), 50, self.screen)
+        self.create_text("z:", WHITE, (col1_x, 300), 50, self.screen)
         self.create_text("vx:", WHITE, (col3_x, 150), 50, self.screen)
-        self.create_text("vy:", WHITE, (col3_x, 250), 50, self.screen)
-        self.create_text("vz:", WHITE, (col3_x, 350), 50, self.screen)
-        self.create_text("time:", WHITE, (col1_x, 450), 50, self.screen)
-        self.create_text("step:", WHITE, (col3_x, 450), 50, self.screen)
+        self.create_text("vy:", WHITE, (col3_x, 225), 50, self.screen)
+        self.create_text("vz:", WHITE, (col3_x, 300), 50, self.screen)
+        self.create_text("time:", WHITE, (col1_x, 375), 50, self.screen)
+        self.create_text("step:", WHITE, (col3_x, 375), 50, self.screen)
         self.create_text("m", WHITE, (col2_x + FIELD_WIDTH + 20, 150), 50, self.screen)
-        self.create_text("m", WHITE, (col2_x + FIELD_WIDTH + 20, 250), 50, self.screen)
-        self.create_text("m", WHITE, (col2_x + FIELD_WIDTH + 20, 350), 50, self.screen)
-        self.create_text("s", WHITE, (col2_x + FIELD_WIDTH + 20, 450), 50, self.screen)
+        self.create_text("m", WHITE, (col2_x + FIELD_WIDTH + 20, 225), 50, self.screen)
+        self.create_text("m", WHITE, (col2_x + FIELD_WIDTH + 20, 300), 50, self.screen)
+        self.create_text("s", WHITE, (col2_x + FIELD_WIDTH + 20, 375), 50, self.screen)
         self.create_text("m/s", WHITE, (col4_x + FIELD_WIDTH + 20, 150), 50, self.screen)
-        self.create_text("m/s", WHITE, (col4_x + FIELD_WIDTH + 20, 250), 50, self.screen)
-        self.create_text("m/s", WHITE, (col4_x + FIELD_WIDTH + 20, 350), 50, self.screen)
-        self.create_text("s", WHITE, (col4_x + FIELD_WIDTH + 20, 450), 50, self.screen)
+        self.create_text("m/s", WHITE, (col4_x + FIELD_WIDTH + 20, 225), 50, self.screen)
+        self.create_text("m/s", WHITE, (col4_x + FIELD_WIDTH + 20, 300), 50, self.screen)
+        self.create_text("s", WHITE, (col4_x + FIELD_WIDTH + 20, 375), 50, self.screen)
         self.create_text("Launch your satellite!", WHITE, (330, 25), 80, self.screen)
-        self.create_text("Choose start parameters:", WHITE, (150, 100), 50, self.screen)
-        self.create_text("integrator: ", WHITE, (col1_x, 550), 50, self.screen)
-        self.create_text("Plot:", WHITE, (col3_x, 550), 50, self.screen)
-        self.create_text("x-axis ", WHITE, (col4_x, 525), 50, self.screen)
-        self.create_text("y-axis ", WHITE, (col4_x, 575), 50, self.screen)
+        self.create_text("Choose start parameters:", YELLOW, (150, 100), 50, self.screen)
+        self.create_text("integrator: ", YELLOW, (col1_x, 450), 50, self.screen)
+        self.create_text("Plot:", YELLOW, (col3_x, 450), 50, self.screen)
+        self.create_text("x-axis ", WHITE, (col4_x, 450), 50, self.screen)
+        self.create_text("y-axis ", WHITE, (col4_x, 500), 50, self.screen)
+        self.create_text("Additional forces:", YELLOW, (col1_x, 525), 50, self.screen)
+        self.create_text("Atmosphere resistance", WHITE, (col1_x + 60, 575), 50, self.screen)
+        self.create_text("Light pressure", WHITE, (col1_x + 60, 625), 50, self.screen)
+        self.start_button.draw()
         for f in self.insert_fields:
             f.draw()
         for f in self.choice_fields:
+            f.draw()
+        for f in self.click_fields:
             f.draw()
 
 
@@ -190,7 +242,9 @@ class Animation(Window):
 
 class LoadingWindow(Window):
 
-    def __init__(self, screen, integrator):
+    def __init__(self, screen, param):
+        # param = np.array([x, y, z, vx, vy, vz, time, step,
+        #          x-axis, y-axis, air_force, sun_force, integrator, is_finished)
         self.screen = screen
         self.mas_x = np.array([])
         self.mas_vx = np.array([])
@@ -199,8 +253,18 @@ class LoadingWindow(Window):
         self.clock = 0
         self.mas_t = np.array([0])
         self.mas_dt = np.array([])
-        self.integrator = integrator
-        self.q = np.array([6400000, 0, 0, 0, 6000, 0])
+        self.integrator = integrators[param[12]]
+        self.integrator.dt = param[7]
+        self.integrator.forces = np.array([])
+        force_numbers = np.array([0])
+        if param[10]:
+            force_numbers = np.append(force_numbers, 1)
+        if param[11]:
+            force_numbers = np.append(force_numbers, 2)
+        for i in force_numbers:
+            self.integrator.forces = np.append(self.integrator.forces, forces[i])
+        self.duration = param[6]
+        self.q = np.array([param[0], param[1], param[2], param[3], param[4], param[5]])
         self.position = np.array([[self.q[0], self.q[1], self.q[2]]], dtype=object)
 
     def run(self):
@@ -223,10 +287,10 @@ class LoadingWindow(Window):
             self.mas_t = np.append(self.mas_t, self.clock)
             self.mas_dt = np.append(self.mas_dt, self.integrator.dt)
             self.q = self.integrator.calc_next_step(self.q, 0)
-            if max(self.mas_t) > 10000:
+            if max(self.mas_t) > self.duration:
                 return 1
 
-            self.create_text("Loading " + str(round(max(self.mas_t) / 10000 * 100)) + "%", WHITE, (350, 350),
+            self.create_text("Loading " + str(round(max(self.mas_t) / self.duration * 100)) + "%", WHITE, (350, 350),
                              100, self.screen)
             pygame.display.update()
             self.screen.fill(BLACK)
@@ -238,10 +302,10 @@ class Field:
     def draw(self):
         pass
 
-    def create_text(self, text, color, position, size, screen):
+    def create_text(self, text, color1, position, size, screen, color2=WHITE):
         f1 = pygame.font.Font(None, size)
         text1 = f1.render(text, True,
-                          color, WHITE)
+                          color1, color2)
         screen.blit(text1, position)
 
 
@@ -285,8 +349,8 @@ class InsertField(Field):
 
 class ChoiceField(Field):
 
-    def __init__(self, x, y, elements, screen):
-        self.choice = 0
+    def __init__(self, x, y, elements, screen, start_choice=0):
+        self.choice = start_choice
         self.elements = elements
         self.x = x
         self.y = y
@@ -306,13 +370,59 @@ class ChoiceField(Field):
                 self.choice = 0
 
     def draw(self):
-        self.create_text("< " + self.elements[self.choice] + " >", WHITE, (self.x, self.y), 40, self.screen)
+        self.create_text("< " + self.elements[self.choice] + " >", WHITE, (self.x, self.y), 40, self.screen, BLACK)
 
-    def create_text(self, text, color, position, size, screen):
-        f1 = pygame.font.Font(None, size)
-        text1 = f1.render(text, True,
-                          color, BLACK)
-        screen.blit(text1, position)
+
+class ClickField(Field):
+
+    def __init__(self, x, y, screen):
+        self.r = 14
+        self.x = x + self.r
+        self.y = y + 1.2 * self.r
+        self.screen = screen
+        self.is_active = False
+
+    def draw(self):
+        pygame.draw.circle(self.screen, WHITE, (self.x, self.y), self.r)
+        if self.is_active:
+            pygame.draw.circle(self.screen, BLACK, (self.x, self.y), self.r / 2)
+
+    def change(self):
+        self.is_active = not self.is_active
+
+    def check_mouse(self):
+        mouse_pos = pygame.mouse.get_pos()
+        if np.sqrt((mouse_pos[0] - self.x) ** 2 + (mouse_pos[1] - self.y) ** 2) < self.r:
+            self.change()
+
+
+class Button(Field):
+
+    def __init__(self, x, y, w, h, text, screen, color=YELLOW):
+        self.x = x
+        self.y = y
+        self.screen = screen
+        self.color = color
+        self.text = text
+        self.w = w
+        self.h = h
+        self.is_active = False
+
+    def draw(self):
+        pygame.draw.rect(self.screen, self.color, (self.x, self.y, self.w, self.h))
+        self.create_text(self.text, BLACK, (self.x + (self.w - len(self.text) * 22) / 2, self.y + self.h * 0.2),
+                         self.h, self.screen, self.color)
+
+    def check_mouse(self):
+        mouse_pos = pygame.mouse.get_pos()
+        if self.x < mouse_pos[0] < self.x + self.w and self.y < mouse_pos[1] < self.y + self.h:
+            self.is_active = True
+            self.color = (255, 235, 0)
+            return True
+        else:
+            self.is_active = False
+            self.color = YELLOW
+            return False
 
 
 def animation_map(q, dt):
