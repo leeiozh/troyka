@@ -63,7 +63,7 @@ class Menu(Window):
         self.field_vx = InsertField(0, col4_x, 150, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
         self.field_vy = InsertField(6780, col4_x, 225, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
         self.field_vz = InsertField(0, col4_x, 300, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
-        self.field_step = InsertField(10, col4_x, 375, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
+        self.field_step = InsertField(1, col4_x, 375, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
         self.field_integrator = ChoiceField(col1_x + 200, 455, ["EulerMethod", "RK4Method", "DorPrMethod"], screen, 1)
         self.field_xplot = ChoiceField(col4_x + 200, 455, ["x", "y", "z", "vx", "vy", "vz", "time"], screen, 6)
         self.field_yplot = ChoiceField(col4_x + 200, 505, ["x", "y", "z", "vx", "vy", "vz", "time"], screen)
@@ -271,7 +271,6 @@ class LoadingWindow(Window):
         finished = False
         clock = pygame.time.Clock()
         while not finished:
-            clock.tick(FPS)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     return 0
