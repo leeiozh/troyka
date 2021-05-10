@@ -1,5 +1,3 @@
-from astropy.time import Time
-import numpy as np
 import pygame
 import graphics
 
@@ -14,6 +12,8 @@ if not parameters[len(parameters) - 1]:
     load = graphics.LoadingWindow(screen, parameters)
     a = load.run()
     if a:
-        anim = graphics.Animation(load.mas_t, load.mas_x, load.position, screen, 1)
+        axis = ['x, m', 'y, m', 'z, m', 'vx, m/s', 'vy, m/s', 'vz, m/s', 't, s']
+        anim = graphics.Animation(load.mas_x, load.mas_y, load.position, screen, 1,
+                                  axis[load.x_axis], axis[load.y_axis])
         anim.run()
 pygame.quit()

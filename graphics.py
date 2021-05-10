@@ -43,10 +43,10 @@ class Window:
     def run(self):
         pass
 
-    def create_text(self, text, color, position, size, screen):
+    def create_text(self, text, color, position, size, screen, background=BLACK):
         f1 = pygame.font.Font(None, size)
         text1 = f1.render(text, True,
-                          color, BLACK)
+                          color, background)
         screen.blit(text1, position)
 
 
@@ -91,7 +91,6 @@ class Menu(Window):
             clock.tick(FPS)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    finished = True
                     return np.array([True])
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     for f in self.insert_fields:
@@ -113,7 +112,6 @@ class Menu(Window):
                                   self.field_xplot.choice, self.field_yplot.choice,
                                   self.air_force_click.is_active, self.sun_force_click.is_active,
                                   self.field_integrator.choice, False]
-                        print(answer)
                         return answer
 
                 if event.type == pygame.KEYDOWN:
@@ -171,7 +169,7 @@ class Menu(Window):
 
 class Animation(Window):
 
-    def __init__(self, x, y, coordinates, screen, delta_t):
+    def __init__(self, x, y, coordinates, screen, delta_t, x_axis, y_axis):
         self.matrix = np.array([[0, -0.5], [-1, -0.3], [1, 1]])
         self.finished = False
         self.dt = delta_t
@@ -184,6 +182,12 @@ class Animation(Window):
         self.y = y
         self.coordinates = coordinates
         self.screen = screen
+        self.plot_w = 400
+        self.plot_h = 300
+        self.plot_x = 70
+        self.plot_y = 50
+        self.x_axis = x_axis
+        self.y_axis = y_axis
 
     def run(self):
         finished = False
@@ -195,6 +199,7 @@ class Animation(Window):
             self.draw_objects()
             #time.sleep(self.dt)
             self.counter += self.acceleration
+            self.plot(self.x, self.y, self.counter, self.x_axis, self.y_axis)
             pygame.display.update()
             self.screen.fill(WHITE)
             for event in pygame.event.get():
@@ -215,21 +220,34 @@ class Animation(Window):
             if self.counter > len(self.coordinates) - 1:
                 finished = True
 
-    def plot(self):
-        plt.cla()
-        plt.xlim(min(self.x) * 1.2, max(self.x) * 1.2)
-        plt.ylim(min(self.y) * 1.2, max(self.y) * 1.2)
-        plt.xlabel("time, sec")
-        plt.ylabel("x, m")
-        plt.grid()
-        plt.plot(self.x[0:self.counter], self.y[0:self.counter], 'r')
-        plt.savefig("plot.png")
+    def plot(self, x, y, counter, x_title="", y_title=""):
+        self.create_text(y_title, BLACK, (self.plot_x, self.plot_y - 30), 30, self.screen, WHITE)
+        self.create_text(x_title, BLACK, (self.plot_x + self.plot_w - 5 * len(x_title),
+                                          self.plot_y + self.plot_h + 20), 30, self.screen, WHITE)
+        pygame.draw.line(self.screen, BLACK, (self.plot_x, self.plot_y), (self.plot_x, self.plot_y + self.plot_h), 5)
+        pygame.draw.line(self.screen, BLACK, (self.plot_x, self.plot_y + self.plot_h),
+                         (self.plot_x + self.plot_w, self.plot_y + self.plot_h), 5)
+        pygame.draw.line(self.screen, BLACK, (self.plot_x, self.plot_y), (self.plot_x - 10, self.plot_y + 15), 5)
+        pygame.draw.line(self.screen, BLACK, (self.plot_x, self.plot_y), (self.plot_x + 10, self.plot_y + 15), 5)
+        pygame.draw.line(self.screen, BLACK, (self.plot_x + self.plot_w, self.plot_y + self.plot_h),
+                         (self.plot_x + self.plot_w - 15, self.plot_y + self.plot_h + 10), 5)
+        pygame.draw.line(self.screen, BLACK, (self.plot_x + self.plot_w, self.plot_y + self.plot_h),
+                         (self.plot_x + self.plot_w - 15, self.plot_y + self.plot_h - 10), 5)
+        for i in range(6):
+            pygame.draw.line(self.screen, BLACK, (self.plot_x + i * self.plot_w / 5, self.plot_y),
+                             (self.plot_x + i * self.plot_w / 5, self.plot_y + self.plot_h), 1)
+            pygame.draw.line(self.screen, BLACK, (self.plot_x, self.plot_y + self.plot_h - i * self.plot_h / 5),
+                             (self.plot_x + self.plot_w, self.plot_y + self.plot_h - i * self.plot_h / 5), 1)
+        kx = 0.8 * self.plot_w / (max(x) - min(x))
+        ky = 0.8 * self.plot_h / (max(y) - min(y))
+        x = self.plot_x + self.plot_w * 0.05 + kx * x - kx * min(x)
+        y = self.plot_y + self.plot_h - ky * y - self.plot_h * 0.05 + ky * min(y)
+        x = x[0:counter]
+        y = y[0:counter]
+        for i in range(len(x) - 2):
+            pygame.draw.line(self.screen, (255, 0, 0), (x[i], y[i]), (x[i+1], y[i+1]), 5)
 
     def draw_objects(self):
-        # plot_surf = pygame.image.load("plot.png")
-        # plot_rect = plot_surf.get_rect(
-        #     bottomright=(625, 475))
-        # self.screen.blit(plot_surf, plot_rect)
         new_co = self.coordinates[self.counter] @ self.matrix
         pygame.draw.polygon(self.screen, [0, 0, 0], ([self.screen.get_width() / 2, 0], [self.screen.get_width(), 0],
                                                          [self.screen.get_width(), self.screen.get_height()],
@@ -247,9 +265,9 @@ class LoadingWindow(Window):
         #          x-axis, y-axis, air_force, sun_force, integrator, is_finished)
         self.screen = screen
         self.mas_x = np.array([])
-        self.mas_vx = np.array([])
-        self.mas_vy = np.array([])
-        self.mas_vz = np.array([])
+        self.mas_y = np.array([])
+        self.x_axis = param[8]
+        self.y_axis = param[9]
         self.clock = 0
         self.mas_t = np.array([0])
         self.mas_dt = np.array([])
@@ -270,6 +288,7 @@ class LoadingWindow(Window):
     def run(self):
         finished = False
         clock = pygame.time.Clock()
+        i = 0
         while not finished:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -278,10 +297,14 @@ class LoadingWindow(Window):
             pos = np.array([[self.q[0] / 25000, self.q[1] / 25000, self.q[2] / 25000]])
             self.position = np.append(self.position, pos, axis=0)
             # print(pos)
-            self.mas_x = np.append(self.mas_x, self.q[0])
-            self.mas_vx = np.append(self.mas_vx, self.q[3])
-            self.mas_vy = np.append(self.mas_vx, self.q[4])
-            self.mas_vz = np.append(self.mas_vx, self.q[5])
+            if self.x_axis < 6:
+                self.mas_x = np.append(self.mas_x, self.q[self.x_axis])
+            else:
+                self.mas_x = self.mas_t
+            if self.y_axis < 6:
+                self.mas_y = np.append(self.mas_y, self.q[self.y_axis])
+            else:
+                self.mas_y = self.mas_t
             self.clock += self.integrator.dt
             self.mas_t = np.append(self.mas_t, self.clock)
             self.mas_dt = np.append(self.mas_dt, self.integrator.dt)
@@ -289,10 +312,13 @@ class LoadingWindow(Window):
             if max(self.mas_t) > self.duration:
                 return 1
 
-            self.create_text("Loading " + str(round(max(self.mas_t) / self.duration * 100)) + "%", WHITE, (350, 350),
-                             100, self.screen)
-            pygame.display.update()
-            self.screen.fill(BLACK)
+            if i % 300 == 0:
+                self.create_text("Loading " + str(round(max(self.mas_t) / self.duration * 100)) + "%", WHITE,
+                                 (350, 350),
+                                 100, self.screen)
+                pygame.display.update()
+                self.screen.fill(BLACK)
+            i += 1
 
 
 class Field:
