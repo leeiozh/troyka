@@ -39,11 +39,24 @@ forces = [g_force, air_force, sun_force]
 
 class Window:
 
+    """
+    abstract class for all program's windows
+    """
+
     @abstractmethod
     def run(self):
+        """
+        abstract method, uses for runtime functions
+        :return: smth useful
+        """
         pass
 
-    def create_text(self, text, color, position, size, screen, background=BLACK):
+    @staticmethod
+    def create_text(text, color, position, size, screen, background=BLACK):
+        """
+            abstract method, create text on screen
+            :return: text
+        """
         f1 = pygame.font.Font(None, size)
         text1 = f1.render(text, True,
                           color, background)
@@ -52,7 +65,15 @@ class Window:
 
 class Menu(Window):
 
+    """
+    class of first window of program, where inits all parameters
+    """
+
     def __init__(self, screen):
+        """
+        init function
+        :param screen: surface
+        """
         self.buttons = []
         self.positions = []
         self.screen = screen
@@ -132,6 +153,10 @@ class Menu(Window):
             self.screen.fill(BLACK)
 
     def draw_objects(self):
+        """
+        draws objects from menu
+        :return: none
+        """
         self.create_text("x:", WHITE, (col1_x, 150), 50, self.screen)
         self.create_text("y:", WHITE, (col1_x, 225), 50, self.screen)
         self.create_text("z:", WHITE, (col1_x, 300), 50, self.screen)
@@ -167,8 +192,22 @@ class Menu(Window):
 
 
 class Animation(Window):
+    """
+    class animation, third window of program, which outputs all visualization in runtime
+    """
 
     def __init__(self, x, y, coordinates, output, screen, delta_t, x_axis, y_axis):
+        """
+        init function
+        :param x: array user's x axis
+        :param y: array user's y axis
+        :param coordinates: satellite's coordinates
+        :param output: satellite's coordinates and velocities
+        :param screen: surface
+        :param delta_t: time step
+        :param x_axis: user's x axis title
+        :param y_axis: user's y axis title
+        """
         self.matrix = np.array([[0, -0.5], [-1, -0.3], [1, 1]])
         self.display = (1200, 800)
         self.finished = False
@@ -344,7 +383,16 @@ class Animation(Window):
 
 class LoadingWindow(Window):
 
+    """
+    class loading, second window, where make integration and output load line
+    """
+
     def __init__(self, screen, param):
+        """
+        init function
+        :param screen: surface
+        :param param: zero's satellite's parameters
+        """
         # param = np.array([x, y, z, vx, vy, vz, time, step,
         #          x-axis, y-axis, air_force, sun_force, integrator, is_finished)
         self.screen = screen
@@ -371,6 +419,10 @@ class LoadingWindow(Window):
         self.position = np.array([[self.q[0], self.q[1], self.q[2]]], dtype=object)
 
     def run(self):
+        """
+        runtime function, which build all integration
+        :return: all ballistics parameters
+        """
         finished = False
         i = 0
         while not finished:
