@@ -12,6 +12,10 @@ BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 FIELD_WIDTH = 200
 FIELD_HEIGHT = 40
+col1_x = 150
+col2_x = 250
+col3_x = 700
+col4_x = 810
 
 
 class Window:
@@ -33,22 +37,20 @@ class Menu(Window):
         self.buttons = []
         self.positions = []
         self.screen = screen
-        self.create_text("x:", WHITE, (250, 150), 50, self.screen)
-        self.create_text("y:", WHITE, (250, 250), 50, self.screen)
-        self.create_text("z:", WHITE, (250, 350), 50, self.screen)
-        self.create_text("vx:", WHITE, (700, 150), 50, self.screen)
-        self.create_text("vy:", WHITE, (700, 250), 50, self.screen)
-        self.create_text("vz:", WHITE, (700, 350), 50, self.screen)
-        self.field_x = InsertField(0, 300, 150, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
-        self.field_y = InsertField(0, 300, 250, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
-        self.field_z = InsertField(0, 300, 350, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
-        self.field_vx = InsertField(0, 750, 150, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
-        self.field_vy = InsertField(0, 750, 250, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
-        self.field_vz = InsertField(0, 750, 350, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
-        self.field_integrator = ChoiceField(250, 450, ["EulerMethod", "RK4Method", "DormandPrinceMethod"], screen)
+        self.field_x = InsertField(0, col2_x, 150, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
+        self.field_y = InsertField(0, col2_x, 250, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
+        self.field_z = InsertField(0, col2_x, 350, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
+        self.field_t = InsertField(0, col2_x, 450, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
+        self.field_vx = InsertField(0, col4_x, 150, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
+        self.field_vy = InsertField(0, col4_x, 250, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
+        self.field_vz = InsertField(0, col4_x, 350, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
+        self.field_step = InsertField(0, col4_x, 450, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
+        self.field_integrator = ChoiceField(col1_x + 200, 555, ["EulerMethod", "RK4Method", "DorPrMethod"], screen)
+        self.field_xplot = ChoiceField(col4_x + 200, 530, ["x", "y", "z", "vx", "vy", "vz", "time"], screen)
+        self.field_yplot = ChoiceField(col4_x + 200, 580, ["x", "y", "z", "vx", "vy", "vz", "time"], screen)
         self.insert_fields = np.array([self.field_x, self.field_y, self.field_z, self.field_vx, self.field_vy,
-                                       self.field_vz])
-        self.choice_fields = np.array([self.field_integrator])
+                                       self.field_vz, self.field_t, self.field_step])
+        self.choice_fields = np.array([self.field_integrator, self.field_xplot, self.field_yplot])
 
     def run(self):
         finished = False
@@ -87,17 +89,33 @@ class Menu(Window):
             self.screen.fill(BLACK)
 
     def draw_objects(self):
-        self.create_text("x:", WHITE, (250, 150), 50, self.screen)
-        self.create_text("y:", WHITE, (250, 250), 50, self.screen)
-        self.create_text("z:", WHITE, (250, 350), 50, self.screen)
-        self.create_text("vx:", WHITE, (690, 150), 50, self.screen)
-        self.create_text("vy:", WHITE, (690, 250), 50, self.screen)
-        self.create_text("vz:", WHITE, (690, 350), 50, self.screen)
-        self.create_text("Launch your satellite!", WHITE, (250, 50), 100, self.screen)
+        self.create_text("x:", WHITE, (col1_x, 150), 50, self.screen)
+        self.create_text("y:", WHITE, (col1_x, 250), 50, self.screen)
+        self.create_text("z:", WHITE, (col1_x, 350), 50, self.screen)
+        self.create_text("vx:", WHITE, (col3_x, 150), 50, self.screen)
+        self.create_text("vy:", WHITE, (col3_x, 250), 50, self.screen)
+        self.create_text("vz:", WHITE, (col3_x, 350), 50, self.screen)
+        self.create_text("time:", WHITE, (col1_x, 450), 50, self.screen)
+        self.create_text("step:", WHITE, (col3_x, 450), 50, self.screen)
+        self.create_text("m", WHITE, (col2_x + FIELD_WIDTH + 20, 150), 50, self.screen)
+        self.create_text("m", WHITE, (col2_x + FIELD_WIDTH + 20, 250), 50, self.screen)
+        self.create_text("m", WHITE, (col2_x + FIELD_WIDTH + 20, 350), 50, self.screen)
+        self.create_text("s", WHITE, (col2_x + FIELD_WIDTH + 20, 450), 50, self.screen)
+        self.create_text("m/s", WHITE, (col4_x + FIELD_WIDTH + 20, 150), 50, self.screen)
+        self.create_text("m/s", WHITE, (col4_x + FIELD_WIDTH + 20, 250), 50, self.screen)
+        self.create_text("m/s", WHITE, (col4_x + FIELD_WIDTH + 20, 350), 50, self.screen)
+        self.create_text("s", WHITE, (col4_x + FIELD_WIDTH + 20, 450), 50, self.screen)
+        self.create_text("Launch your satellite!", WHITE, (330, 25), 80, self.screen)
+        self.create_text("Choose start parameters:", WHITE, (150, 100), 50, self.screen)
+        self.create_text("integrator: ", WHITE, (col1_x, 550), 50, self.screen)
+        self.create_text("Plot:", WHITE, (col3_x, 550), 50, self.screen)
+        self.create_text("x-axis ", WHITE, (col4_x, 525), 50, self.screen)
+        self.create_text("y-axis ", WHITE, (col4_x, 575), 50, self.screen)
         for f in self.insert_fields:
             f.draw()
         for f in self.choice_fields:
             f.draw()
+
 
 class Animation(Window):
 
@@ -281,7 +299,7 @@ class ChoiceField(Field):
                 self.choice -= 1
             else:
                 self.choice = len(self.elements) - 1
-        elif self.x + 15 * (len(self.elements[self.choice]) + 3) < mouse_pos[0] < self.x + 15 * (len(self.elements[self.choice]) + 6) and self.y < mouse_pos[1] < self.y + 40:
+        elif self.x + 15 * (len(self.elements[self.choice]) + 2) < mouse_pos[0] < self.x + 15 * (len(self.elements[self.choice]) + 6) and self.y < mouse_pos[1] < self.y + 40:
             if self.choice < len(self.elements) - 1:
                 self.choice += 1
             else:
