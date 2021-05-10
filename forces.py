@@ -155,6 +155,7 @@ class SunForce(BaseForce):
         :param time: current time
         :return: force
         """
+        time = Time('2021-05-10T00:00:00.10', format='isot', scale='utc')
         sun = np.array(get_sun(time).cartesian.xyz * self.AU)
         r = ((q[0] - sun[0]) ** 2 + (q[1] - sun[1]) ** 2 + (q[2] - sun[2]) ** 2) ** 0.5
         if self.tapor(q, sun, r):
