@@ -193,18 +193,22 @@ class Animation(Window):
         self.y_axis = y_axis
 
     def run(self):
+        """
+        runtime function, which draw all pictures
+        :return: image
+        """
         finished = False
         clock = pygame.time.Clock()
         while not finished:
             clock.tick(FPS)
+            long, lang = to_polar(self.input[self.counter:self.counter + 6])
+            self.plot_map(self.screen, long, lang)
             # if self.counter % self.plot_step == 0:
             #     self.plot()
             self.draw_objects()
             # time.sleep(self.dt)
             self.counter += self.acceleration
             self.plot(self.x, self.y, self.counter, self.x_axis, self.y_axis)
-            long, lang = to_polar(self.input[self.counter:self.counter + 6])
-            self.plot_map(self.screen, long, lang)
             self.print_kepler_coord(self.screen, self.display, self.input[self.counter:self.counter + 6])
             self.print_gcrs_coord(self.screen, self.display, self.input[self.counter:self.counter + 6])
             pygame.display.update()
@@ -228,6 +232,15 @@ class Animation(Window):
                 finished = True
 
     def plot(self, x, y, counter, x_title="", y_title=""):
+        """
+        draw plot with user's axes
+        :param x: user's x ax
+        :param y: user's y ax
+        :param counter: global counter
+        :param x_title: user's x title
+        :param y_title: user's y title
+        :return: plot image
+        """
         self.create_text(y_title, BLACK, (self.plot_x, self.plot_y - 30), 30, self.screen, WHITE)
         self.create_text(x_title, BLACK, (self.plot_x + self.plot_w - 5 * len(x_title),
                                           self.plot_y + self.plot_h + 20), 30, self.screen, WHITE)
@@ -255,6 +268,10 @@ class Animation(Window):
             pygame.draw.line(self.screen, (255, 0, 0), (x[i], y[i]), (x[i + 1], y[i + 1]), 5)
 
     def draw_objects(self):
+        """
+        draws Earth's and satellite's circles
+        :return: image
+        """
         new_co = self.coordinates[self.counter] @ self.matrix
         pygame.draw.polygon(self.screen, [0, 0, 0], ([self.screen.get_width() / 2, 0], [self.screen.get_width(), 0],
                                                      [self.screen.get_width(), self.screen.get_height()],
@@ -313,9 +330,16 @@ class Animation(Window):
             screen.blit(text_surface[i], [display_size[0] * 0.6, display_size[1] * 0.75 + i * 20])
 
     def plot_map(self, screen, x, y):
+        """
+        draw sattelite's dot on Earth
+        :param screen: surface
+        :param x: latitude
+        :param y: longitude
+        :return: picture
+        """
         plot_surf = pygame.image.load("plot_map.png")
-        plot_surf = pygame.transform.scale(plot_surf, (int(500 * 1.2), int(300 * 1.2)))
-        plot_rect = plot_surf.get_rect(bottomright=(600, 750))
+        plot_surf = pygame.transform.scale(plot_surf, (int(500 * 1.2), int(300 * 1.1)))
+        plot_rect = plot_surf.get_rect(bottomright=(610, 750))
         screen.blit(plot_surf, plot_rect)
         pygame.draw.circle(self.screen, (0, 255, 0), [300 + x, 570 + y], 5)
 
