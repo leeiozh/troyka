@@ -20,10 +20,10 @@ col2_x = 250
 col3_x = 700
 col4_x = 810
 
-mass = 1
+mass = 100
 square = 0.2
 cx = 1
-time = Time('1999-01-01T00:00:00.123456789', format='isot', scale='utc')
+time = Time('2021-05-10T00:00:00.10', format='isot', scale='utc')
 
 integrator1 = EulerMethod2(0, mass, 0)
 integrator2 = RK4Method(0, mass, 0)
@@ -58,12 +58,12 @@ class Menu(Window):
         self.positions = []
         self.screen = screen
         self.field_x = InsertField(6700000, col2_x, 150, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
-        self.field_y = InsertField(0, col2_x, 225, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
-        self.field_z = InsertField(0, col2_x, 300, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
+        self.field_y = InsertField(100000, col2_x, 225, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
+        self.field_z = InsertField(100000, col2_x, 300, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
         self.field_t = InsertField(5000, col2_x, 375, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
-        self.field_vx = InsertField(0, col4_x, 150, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
+        self.field_vx = InsertField(1000, col4_x, 150, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
         self.field_vy = InsertField(6780, col4_x, 225, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
-        self.field_vz = InsertField(0, col4_x, 300, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
+        self.field_vz = InsertField(1000, col4_x, 300, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
         self.field_step = InsertField(1, col4_x, 375, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
         self.field_integrator = ChoiceField(col1_x + 200, 455, ["EulerMethod", "RK4Method", "DorPrMethod"], screen, 1)
         self.field_xplot = ChoiceField(col4_x + 200, 455, ["x", "y", "z", "vx", "vy", "vz", "time"], screen, 6)
@@ -203,6 +203,8 @@ class Animation(Window):
             # time.sleep(self.dt)
             self.counter += self.acceleration
             self.plot(self.x, self.y, self.counter, self.x_axis, self.y_axis)
+            long, lang = to_polar(self.input[self.counter:self.counter + 6])
+            self.plot_map(self.screen, long, lang)
             self.print_kepler_coord(self.screen, self.display, self.input[self.counter:self.counter + 6])
             self.print_gcrs_coord(self.screen, self.display, self.input[self.counter:self.counter + 6])
             pygame.display.update()
@@ -258,7 +260,7 @@ class Animation(Window):
                                                      [self.screen.get_width(), self.screen.get_height()],
                                                      [self.screen.get_width() / 2, self.screen.get_height()]))
         pygame.draw.circle(self.screen, [0, 255, 255], [self.screen.get_width() * 0.75 + self.dx,
-                                                          self.screen.get_height() / 2 + self.dy], 20)
+                                                        self.screen.get_height() / 2 + self.dy], 20)
         pygame.draw.circle(self.screen, [255, 255, 255], [self.screen.get_width() * 0.75 + new_co[0] + self.dx,
                                                           self.screen.get_height() / 2 + new_co[1] + self.dy], 10)
 
@@ -309,6 +311,13 @@ class Animation(Window):
                         font.render("True anomaly th = {0:0.2f}".format(q[5] / np.pi * 180), True, font_color)]
         for i in range(6):
             screen.blit(text_surface[i], [display_size[0] * 0.6, display_size[1] * 0.75 + i * 20])
+
+    def plot_map(self, screen, x, y):
+        plot_surf = pygame.image.load("plot_map.png")
+        plot_surf = pygame.transform.scale(plot_surf, (int(500 * 1.2), int(300 * 1.2)))
+        plot_rect = plot_surf.get_rect(bottomright=(600, 750))
+        screen.blit(plot_surf, plot_rect)
+        pygame.draw.circle(self.screen, (0, 255, 0), [300 + x, 570 + y], 5)
 
 
 class LoadingWindow(Window):
@@ -505,36 +514,3 @@ class Button(Field):
             self.is_active = False
             self.color = YELLOW
             return False
-
-
-def make_plot(fig, ax, coord_x, coord_y, clock):
-    """
-    draw a plot
-    :param coord_x: satellite's longitude
-    :param coord_y: satellite's latitude
-    :param clock: time
-    :return: save plot in a folder
-    """
-    world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
-    world.plot(ax=ax, color="gray")
-    ax.set(xlabel="Longitude(Degrees)", ylabel="Latitude(Degrees)")
-    for i in range(-90, 91, 15):
-        ax.plot([i * 2, i * 2], [-90, 90], color="lightgray", linewidth=0.4)
-        ax.plot([-180, 180], [i, i], color="lightgray", linewidth=0.4)
-    plt.plot(coord_x, coord_y, color="red")
-    plt.savefig("plot_map.png")
-    clock.tick(FPS)
-
-
-def print_speed(dr, screen, display_size):
-    """
-    print visualization's speed
-    :param dr: visualization's step
-    :param screen: screen
-    :param display_size: display size
-    :return: printed speed
-    """
-    font = pygame.font.Font(None, 25)
-    font_color = (0, 0, 0)
-    screen.blit(font.render("Speed visualization: {}".format(dr), True, font_color),
-                [display_size[0] * 0.05, display_size[1] * 0.05])
