@@ -1,11 +1,10 @@
 import pygame
 import geopandas as gpd
-import matplotlib.pyplot as plt
 import numpy as np
 from abc import abstractmethod
 from trasfomation import to_kepler, to_polar
-from forces import ResistForce, GravityForce, SunForce, TestForce
-from IntegrateMethods import RK4Method, EulerMethod1, EulerMethod2, DormandPrinceMethod
+from forces import ResistForce, GravityForce, SunForce
+from IntegrateMethods import RK4Method, EulerMethod2, DormandPrinceMethod
 from astropy.time import Time
 
 FPS = 30
@@ -127,7 +126,6 @@ class Menu(Window):
                             if len(f.value) < 13:
                                 f.insert(event.unicode)
 
-            mouse_pos = pygame.mouse.get_pos()
             self.start_button.check_mouse()
             self.draw_objects()
             pygame.display.update()
@@ -197,8 +195,6 @@ class Animation(Window):
         clock = pygame.time.Clock()
         while not finished:
             clock.tick(FPS)
-            # if self.counter % self.plot_step == 0:
-            #     self.plot()
             self.draw_objects()
             # time.sleep(self.dt)
             self.counter += self.acceleration
@@ -247,8 +243,8 @@ class Animation(Window):
                              (self.plot_x + self.plot_w, self.plot_y + self.plot_h - i * self.plot_h / 5), 1)
         kx = 0.8 * self.plot_w / (max(x) - min(x))
         ky = 0.8 * self.plot_h / (max(y) - min(y))
-        x = self.plot_x + self.plot_w * 0.05 + kx * x - kx * min(x)
-        y = self.plot_y + self.plot_h - ky * y - self.plot_h * 0.05 + ky * min(y)
+        x = self.plot_x + self.plot_w * 0.1 + kx * x - kx * min(x)
+        y = self.plot_y + self.plot_h - ky * y - self.plot_h * 0.1 + ky * min(y)
         x = x[0:counter]
         y = y[0:counter]
         for i in range(len(x) - 2):
@@ -350,7 +346,6 @@ class LoadingWindow(Window):
 
     def run(self):
         finished = False
-        clock = pygame.time.Clock()
         i = 0
         while not finished:
             for event in pygame.event.get():
@@ -430,8 +425,8 @@ class InsertField(Field):
             self.is_active = False
 
     def check_mouse(self):
-        if self.x < pygame.mouse.get_pos()[0] < self.x + self.width and self.y < pygame.mouse.get_pos()[
-            1] < self.y + self.height:
+        if self.x < pygame.mouse.get_pos()[0] < self.x + self.width and self.y < pygame.mouse.get_pos()[1] < self.y\
+                + self.height:
             return True
         else:
             return False
