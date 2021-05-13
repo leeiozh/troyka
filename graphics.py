@@ -5,13 +5,15 @@ from trasfomation import to_kepler, to_polar
 from forces import ResistForce, GravityForce, SunForce
 from IntegrateMethods import RK4Method, EulerMethod2, DormandPrinceMethod
 from astropy.time import Time
+import time as t
 
 FPS = 30
 
 YELLOW = (255, 200, 0)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
-FIELD_WIDTH = 200
+GREY = (100, 100, 100)
+FIELD_WIDTH = 255
 FIELD_HEIGHT = 40
 col1_x = 150
 col2_x = 250
@@ -82,16 +84,56 @@ class Menu(Window):
         self.field_vy = InsertField(6780, col4_x, 225, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
         self.field_vz = InsertField(1000, col4_x, 300, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
         self.field_step = InsertField(1, col4_x, 375, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
+        self.field_filename = InsertField("file.txt", col4_x + 50, 600, FIELD_WIDTH - 30, FIELD_HEIGHT, self.screen)
+        self.field_mass = InsertField("500", col4_x, 75, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
         self.field_integrator = ChoiceField(col1_x + 200, 455, ["EulerMethod", "RK4Method", "DorPrMethod"], screen, 1)
         self.field_xplot = ChoiceField(col4_x + 200, 455, ["x", "y", "z", "vx", "vy", "vz", "time"], screen, 6)
         self.field_yplot = ChoiceField(col4_x + 200, 505, ["x", "y", "z", "vx", "vy", "vz", "time"], screen)
         self.air_force_click = ClickField(col1_x, 575, self.screen)
         self.sun_force_click = ClickField(col1_x, 625, self.screen)
+        self.load_click = ClickField(col3_x, 550, self.screen)
         self.insert_fields = np.array([self.field_x, self.field_y, self.field_z, self.field_vx, self.field_vy,
-                                       self.field_vz, self.field_t, self.field_step])
+                                       self.field_vz, self.field_t, self.field_step, self.field_filename,
+                                       self.field_mass])
         self.choice_fields = np.array([self.field_integrator, self.field_xplot, self.field_yplot])
-        self.click_fields = np.array([self.air_force_click, self.sun_force_click])
-        self.start_button = Button(500, 670, 200, 70, "Start!", screen)
+        self.click_fields = np.array([self.air_force_click, self.sun_force_click, self.load_click])
+        self.start_button = Button(500, 670, 200, 70, "Start!", self.screen)
+
+        self.text1 = Text("x:", WHITE, (col1_x, 150), 50, self.screen)
+        self.text2 = Text("y:", WHITE, (col1_x, 225), 50, self.screen)
+        self.text3 = Text("z:", WHITE, (col1_x, 300), 50, self.screen)
+        self.text4 = Text("vx:", WHITE, (col3_x, 150), 50, self.screen)
+        self.text5 = Text("vy:", WHITE, (col3_x, 225), 50, self.screen)
+        self.text6 = Text("vz:", WHITE, (col3_x, 300), 50, self.screen)
+        self.text7 = Text("time:", WHITE, (col1_x, 375), 50, self.screen)
+        self.text8 = Text("step:", WHITE, (col3_x, 375), 50, self.screen)
+        self.text9 = Text("mass:", WHITE, (col3_x, 75), 50, self.screen)
+        self.text10 = Text("m", WHITE, (col2_x + FIELD_WIDTH + 20, 150), 50, self.screen)
+        self.text11 = Text("m", WHITE, (col2_x + FIELD_WIDTH + 20, 225), 50, self.screen)
+        self.text12 = Text("m", WHITE, (col2_x + FIELD_WIDTH + 20, 300), 50, self.screen)
+        self.text13 = Text("s", WHITE, (col2_x + FIELD_WIDTH + 20, 375), 50, self.screen)
+        self.text14 = Text("m/s", WHITE, (col4_x + FIELD_WIDTH + 20, 150), 50, self.screen)
+        self.text15 = Text("m/s", WHITE, (col4_x + FIELD_WIDTH + 20, 225), 50, self.screen)
+        self.text16 = Text("m/s", WHITE, (col4_x + FIELD_WIDTH + 20, 300), 50, self.screen)
+        self.text17 = Text("s", WHITE, (col4_x + FIELD_WIDTH + 20, 375), 50, self.screen)
+        self.text18 = Text("kg", WHITE, (col4_x + FIELD_WIDTH + 20, 75), 50, self.screen)
+        self.text19 = Text("Launch your satellite!", WHITE, (330, 12), 70, self.screen)
+        self.text20 = Text("Choose start parameters:", YELLOW, (150, 75), 50, self.screen)
+        self.text21 = Text("Integrator: ", YELLOW, (col1_x, 450), 50, self.screen)
+        self.text22 = Text("Plot:", YELLOW, (col3_x, 450), 50, self.screen)
+        self.text23 = Text("x-axis ", WHITE, (col4_x, 450), 50, self.screen)
+        self.text24 = Text("y-axis ", WHITE, (col4_x, 500), 50, self.screen)
+        self.text25 = Text("Additional forces:", YELLOW, (col1_x, 525), 50, self.screen)
+        self.text26 = Text("Atmosphere resistance", WHITE, (col1_x + 60, 575), 50, self.screen)
+        self.text27 = Text("Light pressure", WHITE, (col1_x + 60, 625), 50, self.screen)
+        self.text28 = Text("Open from file:", YELLOW, (col3_x + 40, 550), 50, self.screen)
+        self.text29 = Text("filename", WHITE, (col3_x, 600), 50, self.screen)
+
+        self.texts = np.array([self.text1, self.text2, self.text3, self.text4, self.text5, self.text6, self.text7,
+                               self.text8, self.text9, self.text10, self.text11, self.text12, self.text13, self.text14,
+                               self.text15, self.text16, self.text17, self.text18, self.text19, self.text20,
+                               self.text21, self.text22, self.text23, self.text24, self.text25, self.text26,
+                               self.text27, self.text28, self.text29])
 
     def run(self):
         """
@@ -112,10 +154,15 @@ class Menu(Window):
                     return np.array([True])
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     for f in self.insert_fields:
-                        if f.check_mouse():
+                        if f.check_mouse() and not self.load_click.is_active:
                             f.activate()
                         else:
                             f.disactivate()
+
+                    if self.field_filename.check_mouse():
+                        self.field_filename.activate()
+                    else:
+                        self.field_filename.disactivate()
 
                     for f in self.choice_fields:
                         f.check_mouse()
@@ -123,13 +170,23 @@ class Menu(Window):
                     for f in self.click_fields:
                         f.check_mouse()
 
+                    for text in [self.text1, self.text2, self.text3, self.text4, self.text5, self.text6, self.text7,
+                                 self.text8, self.text9, self.text10, self.text11, self.text12, self.text13,
+                                 self.text14, self.text15, self.text16, self.text17, self.text18, self.text20,
+                                 self.field_integrator, self.text25, self.text26, self.text27, self.air_force_click,
+                                 self.sun_force_click, self.text21]:
+                        if self.load_click.is_active:
+                            text.desactivate()
+                        else:
+                            text.activate()
+
                     if self.start_button.check_mouse():
                         answer = [float(self.field_x.value), float(self.field_y.value), float(self.field_z.value),
                                   float(self.field_vx.value), float(self.field_vy.value), float(self.field_vz.value),
                                   float(self.field_t.value), float(self.field_step.value),
                                   self.field_xplot.choice, self.field_yplot.choice,
                                   self.air_force_click.is_active, self.sun_force_click.is_active,
-                                  self.field_integrator.choice, False]
+                                  self.field_integrator.choice, int(self.field_mass.value), False]
                         return answer
 
                 if event.type == pygame.KEYDOWN:
@@ -140,8 +197,9 @@ class Menu(Window):
                             if f.is_active and f.value != "":
                                 f.value = f.value[:-2]
                                 f.value += "|"
+                                f.text.set_text(f.value)
                         else:
-                            if len(f.value) < 13:
+                            if len(f.value) < 15:
                                 f.insert(event.unicode)
 
             self.start_button.check_mouse()
@@ -149,37 +207,15 @@ class Menu(Window):
             pygame.display.update()
             self.screen.fill(BLACK)
 
+    def open_file(self):
+        """"""
+        pass
+
     def draw_objects(self):
-        """
-        draws objects from menu
-        :return: none
-        """
-        self.create_text("x:", WHITE, (col1_x, 150), 50, self.screen)
-        self.create_text("y:", WHITE, (col1_x, 225), 50, self.screen)
-        self.create_text("z:", WHITE, (col1_x, 300), 50, self.screen)
-        self.create_text("vx:", WHITE, (col3_x, 150), 50, self.screen)
-        self.create_text("vy:", WHITE, (col3_x, 225), 50, self.screen)
-        self.create_text("vz:", WHITE, (col3_x, 300), 50, self.screen)
-        self.create_text("time:", WHITE, (col1_x, 375), 50, self.screen)
-        self.create_text("step:", WHITE, (col3_x, 375), 50, self.screen)
-        self.create_text("m", WHITE, (col2_x + FIELD_WIDTH + 20, 150), 50, self.screen)
-        self.create_text("m", WHITE, (col2_x + FIELD_WIDTH + 20, 225), 50, self.screen)
-        self.create_text("m", WHITE, (col2_x + FIELD_WIDTH + 20, 300), 50, self.screen)
-        self.create_text("s", WHITE, (col2_x + FIELD_WIDTH + 20, 375), 50, self.screen)
-        self.create_text("m/s", WHITE, (col4_x + FIELD_WIDTH + 20, 150), 50, self.screen)
-        self.create_text("m/s", WHITE, (col4_x + FIELD_WIDTH + 20, 225), 50, self.screen)
-        self.create_text("m/s", WHITE, (col4_x + FIELD_WIDTH + 20, 300), 50, self.screen)
-        self.create_text("s", WHITE, (col4_x + FIELD_WIDTH + 20, 375), 50, self.screen)
-        self.create_text("Launch your satellite!", WHITE, (330, 25), 80, self.screen)
-        self.create_text("Choose start parameters:", YELLOW, (150, 90), 50, self.screen)
-        self.create_text("Integrator: ", YELLOW, (col1_x, 450), 50, self.screen)
-        self.create_text("Plot:", YELLOW, (col3_x, 450), 50, self.screen)
-        self.create_text("x-axis ", WHITE, (col4_x, 450), 50, self.screen)
-        self.create_text("y-axis ", WHITE, (col4_x, 500), 50, self.screen)
-        self.create_text("Additional forces:", YELLOW, (col1_x, 525), 50, self.screen)
-        self.create_text("Atmosphere resistance", WHITE, (col1_x + 60, 575), 50, self.screen)
-        self.create_text("Light pressure", WHITE, (col1_x + 60, 625), 50, self.screen)
+        """Draws all objects in the window"""
         self.start_button.draw()
+        for text in self.texts:
+            text.draw()
         for f in self.insert_fields:
             f.draw()
         for f in self.choice_fields:
@@ -195,15 +231,15 @@ class Animation(Window):
 
     def __init__(self, x, y, coordinates, output, screen, delta_t, x_axis, y_axis):
         """
-        init function
-        :param x: array user's x axis
-        :param y: array user's y axis
-        :param coordinates: satellite's coordinates
-        :param output: satellite's coordinates and velocities
-        :param screen: surface
-        :param delta_t: time step
-        :param x_axis: user's x axis title
-        :param y_axis: user's y axis title
+
+        :param x: data for x-axis of plot
+        :param y: data for y-axis of plot
+        :param coordinates: array of coordinate-vectors: [x, y, z, vx, vy, vz]
+        :param output:
+        :param screen: screen to draw
+        :param delta_t: step of integration
+        :param x_axis: name for x-axis
+        :param y_axis: name for y-axis
         """
         self.matrix = np.array([[0, -0.5], [-1, -0.3], [1, 1]])
         self.display = (1200, 800)
@@ -242,6 +278,7 @@ class Animation(Window):
             clock.tick(FPS)
             self.plot_map(self.screen, self.counter)
             self.draw_objects()
+            # time.sleep(self.dt)
             self.counter += self.acceleration
             self.plot(self.x, self.y, self.counter, self.x_axis, self.y_axis)
             self.print_kepler_coord(self.screen, self.display, self.input[self.counter])
@@ -394,18 +431,21 @@ class LoadingWindow(Window):
     """
 
     def __init__(self, screen, param):
-        """
-        init function
-        :param screen: surface
-        :param param: zero's satellite's parameters
-        """
         # param = np.array([x, y, z, vx, vy, vz, time, step,
-        #          x-axis, y-axis, air_force, sun_force, integrator, is_finished)
+        #          x-axis, y-axis, air_force, sun_force, integrator, mass, is_finished)
         self.screen = screen
         self.duration = param[6]
+        self.mas_x = np.array([])
+        self.mas_y = np.array([])
+        self.x_axis = param[8]
+        self.y_axis = param[9]
+        self.clock = 0
+        self.mas_t = np.array([0])
+        self.mas_dt = np.array([])
         self.integrator = integrators[param[12]]
         self.integrator.dt = param[7]
         self.integrator.forces = np.array([])
+        self.integrator.m = param[13]
         force_numbers = np.array([0])
         if param[10]:
             force_numbers = np.append(force_numbers, 1)
@@ -480,19 +520,44 @@ class LoadingWindow(Window):
             self.position[i] = f[0:3] / 25000
         return True
 
+class Text:
+
+    def __init__(self, text, color, position, size, screen, background=BLACK):
+        self.text = text
+        self.base_color = color
+        self.current_color = color
+        self.x = position[0]
+        self.y = position[1]
+        self.size = size
+        self.screen = screen
+        self.background = background
+        self.is_active = True
+
+    def draw(self):
+        f1 = pygame.font.Font(None, self.size)
+        text1 = f1.render(self.text, True,
+                          self.current_color, self.background)
+        self.screen.blit(text1, (self.x, self.y))
+
+    def activate(self):
+        if not self.is_active:
+            self.is_active = True
+            self.current_color = self.base_color
+
+    def desactivate(self):
+        if self.is_active:
+            self.is_active = False
+            self.current_color = (100, 100, 100)
+
+    def set_text(self, text):
+        self.text = text
+
 
 class Field:
 
     @abstractmethod
     def draw(self):
         pass
-
-    @staticmethod
-    def create_text(text, color1, position, size, screen, color2=WHITE):
-        f1 = pygame.font.Font(None, size)
-        text1 = f1.render(text, True,
-                          color1, color2)
-        screen.blit(text1, position)
 
 
 class InsertField(Field):
@@ -505,26 +570,30 @@ class InsertField(Field):
         self.width = width
         self.height = height
         self.screen = screen
+        self.text = Text(self.value, BLACK, (self.x + 7, self.y + 7), 40, self.screen, WHITE)
 
     def draw(self):
         pygame.draw.rect(self.screen, WHITE, (self.x, self.y, self.width, self.height))
-        self.create_text(self.value, BLACK, (self.x + 7, self.y + 7), 40, self.screen)
+        self.text.draw()
 
     def insert(self, char):
         if self.is_active:
             self.value = self.value[:-1]
             self.value += str(char)
             self.value += "|"
+            self.text.set_text(self.value)
 
     def activate(self):
         if not self.is_active:
             self.is_active = True
             self.value += "|"
+            self.text.set_text(self.value)
 
     def disactivate(self):
         if self.is_active:
             self.value = self.value[:-1]
             self.is_active = False
+            self.text.set_text(self.value)
 
     def check_mouse(self):
         if self.x < pygame.mouse.get_pos()[0] < self.x + self.width and self.y < pygame.mouse.get_pos()[1] < self.y \
@@ -542,23 +611,34 @@ class ChoiceField(Field):
         self.x = x
         self.y = y
         self.screen = screen
+        self.text = Text("< " + self.elements[self.choice] + " >", WHITE, (self.x, self.y), 40, self.screen, BLACK)
+        self.is_alive = True
 
     def check_mouse(self):
-        mouse_pos = pygame.mouse.get_pos()
-        if self.x < mouse_pos[0] < self.x + 15 and self.y < mouse_pos[1] < self.y + 40:
-            if self.choice > 0:
-                self.choice -= 1
-            else:
-                self.choice = len(self.elements) - 1
-        elif self.x + 15 * (len(self.elements[self.choice]) + 2) < mouse_pos[0] < self.x + 15 * (
-                len(self.elements[self.choice]) + 6) and self.y < mouse_pos[1] < self.y + 40:
-            if self.choice < len(self.elements) - 1:
-                self.choice += 1
-            else:
-                self.choice = 0
+        if self.is_alive:
+            mouse_pos = pygame.mouse.get_pos()
+            if self.x < mouse_pos[0] < self.x + 15 and self.y < mouse_pos[1] < self.y + 40:
+                if self.choice > 0:
+                    self.choice -= 1
+                else:
+                    self.choice = len(self.elements) - 1
+                self.text.set_text("< " + self.elements[self.choice] + " >")
+            elif self.x + 15 * (len(self.elements[self.choice]) + 2) < mouse_pos[0] < self.x + 15 * (
+                    len(self.elements[self.choice]) + 6) and self.y < mouse_pos[1] < self.y + 40:
+                if self.choice < len(self.elements) - 1:
+                    self.choice += 1
+                else:
+                    self.choice = 0
+                self.text.set_text("< " + self.elements[self.choice] + " >")
 
     def draw(self):
-        self.create_text("< " + self.elements[self.choice] + " >", WHITE, (self.x, self.y), 40, self.screen, BLACK)
+        self.text.draw()
+
+    def desactivate(self):
+        self.is_alive = False
+
+    def activate(self):
+        self.is_alive = True
 
 
 class ClickField(Field):
@@ -569,19 +649,30 @@ class ClickField(Field):
         self.y = y + 1.2 * self.r
         self.screen = screen
         self.is_active = False
+        self.is_alive = True
 
     def draw(self):
-        pygame.draw.circle(self.screen, WHITE, (self.x, self.y), self.r)
-        if self.is_active:
-            pygame.draw.circle(self.screen, BLACK, (self.x, self.y), self.r / 2)
+        if self.is_alive:
+            pygame.draw.circle(self.screen, WHITE, (self.x, self.y), self.r)
+            if self.is_active:
+                pygame.draw.circle(self.screen, BLACK, (self.x, self.y), self.r / 2)
+        else:
+            pygame.draw.circle(self.screen, GREY, (self.x, self.y), self.r)
 
     def change(self):
-        self.is_active = not self.is_active
+        if self.is_alive:
+            self.is_active = not self.is_active
 
     def check_mouse(self):
         mouse_pos = pygame.mouse.get_pos()
         if np.sqrt((mouse_pos[0] - self.x) ** 2 + (mouse_pos[1] - self.y) ** 2) < self.r:
             self.change()
+
+    def desactivate(self):
+        self.is_alive = False
+
+    def activate(self):
+        self.is_alive = True
 
 
 class Button(Field):
@@ -595,19 +686,26 @@ class Button(Field):
         self.w = w
         self.h = h
         self.is_active = False
+        self.text_class = Text(self.text, BLACK, (self.x + (self.w - len(self.text) * 22) / 2, self.y + self.h * 0.2),
+                               self.h, self.screen, self.color)
 
     def draw(self):
         pygame.draw.rect(self.screen, self.color, (self.x, self.y, self.w, self.h))
-        self.create_text(self.text, BLACK, (self.x + (self.w - len(self.text) * 22) / 2, self.y + self.h * 0.2),
-                         self.h, self.screen, self.color)
+        self.text_class.draw()
 
     def check_mouse(self):
         mouse_pos = pygame.mouse.get_pos()
         if self.x < mouse_pos[0] < self.x + self.w and self.y < mouse_pos[1] < self.y + self.h:
             self.is_active = True
             self.color = (255, 235, 0)
+            self.text_class = Text(self.text, BLACK,
+                                   (self.x + (self.w - len(self.text) * 22) / 2, self.y + self.h * 0.2),
+                                   self.h, self.screen, self.color)
             return True
         else:
             self.is_active = False
             self.color = YELLOW
+            self.text_class = Text(self.text, BLACK,
+                                   (self.x + (self.w - len(self.text) * 22) / 2, self.y + self.h * 0.2),
+                                   self.h, self.screen, self.color)
             return False
