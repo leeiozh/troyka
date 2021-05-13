@@ -425,8 +425,12 @@ class LoadingWindow(Window):
     """
 
     def __init__(self, screen, param):
-        # param = np.array([x, y, z, vx, vy, vz, time, step,
+        """
+        init function
+        :param screen: surface
+        :param param: np.array([x, y, z, vx, vy, vz, time, step,
         #          x-axis, y-axis, air_force, sun_force, integrator, mass, is_finished)
+        """
         self.screen = screen
         self.duration = param[6]
         self.mas_x = np.array([])
@@ -462,8 +466,6 @@ class LoadingWindow(Window):
             self.mas_y[0] = self.curr_q[self.y_axis]
         self.clock = 0
         self.counter = 0
-        # self.mas_t = np.array([0])
-        # self.mas_dt = np.array([])
         self.output = np.zeros(int(self.duration / self.integrator.dt) * 6)
         self.output.shape = (int(self.duration / self.integrator.dt), 6)
         self.output[0] = self.curr_q
@@ -499,6 +501,11 @@ class LoadingWindow(Window):
             i += 1
 
     def check(self, name):
+        """
+        load ballistic from file
+        :param name: file name
+        :return: coordinates and velocities
+        """
         for i in range(0, int(self.duration / self.integrator.dt)):
             f = np.load(name + "/ballistic%s.npy" % (i + 1))
             self.output[i] = f
@@ -514,8 +521,20 @@ class LoadingWindow(Window):
 
 
 class Text:
+    """
+    class for working with text fields
+    """
 
     def __init__(self, text, color, position, size, screen, background=BLACK):
+        """
+        init function
+        :param text: text
+        :param color: color
+        :param position: text position
+        :param size: field size
+        :param screen: surface
+        :param background: background
+        """
         self.text = text
         self.base_color = color
         self.current_color = color
@@ -527,35 +546,70 @@ class Text:
         self.is_active = True
 
     def draw(self):
+        """
+        draw text on screen
+        :return:
+        """
         f1 = pygame.font.Font(None, self.size)
         text1 = f1.render(self.text, True,
                           self.current_color, self.background)
         self.screen.blit(text1, (self.x, self.y))
 
     def activate(self):
+        """
+        change active fields color
+        :return:
+        """
         if not self.is_active:
             self.is_active = True
             self.current_color = self.base_color
 
     def deactivate(self):
+        """
+        chnge deactive fields in grey color
+        :return:
+        """
         if self.is_active:
             self.is_active = False
             self.current_color = (100, 100, 100)
 
     def set_text(self, text):
+        """
+        set text
+        :param text: text
+        :return:
+        """
         self.text = text
 
 
 class Field:
-
+    """
+    base class for all fields
+    """
     @abstractmethod
     def draw(self):
+        """
+        abstract method for drawing
+        :return:
+        """
         pass
 
 
 class InsertField(Field):
+    """
+    class for inserting
+    """
 
     def __init__(self, value, x, y, width, height, screen):
+        """
+        init function
+        :param value: value
+        :param x: x position on screen
+        :param y: y position on screen
+        :param width: width
+        :param height: height
+        :param screen: surface
+        """
         self.is_active = False
         self.value = str(value)
         self.x = x
@@ -566,10 +620,19 @@ class InsertField(Field):
         self.text = Text(self.value, BLACK, (self.x + 7, self.y + 7), 40, self.screen, WHITE)
 
     def draw(self):
+        """
+        drawing text on screen
+        :return:
+        """
         pygame.draw.rect(self.screen, WHITE, (self.x, self.y, self.width, self.height))
         self.text.draw()
 
     def insert(self, char):
+        """
+        set text in field
+        :param char: symbol
+        :return:
+        """
         if self.is_active:
             self.value = self.value[:-1]
             self.value += str(char)
@@ -577,18 +640,30 @@ class InsertField(Field):
             self.text.set_text(self.value)
 
     def activate(self):
+        """
+        activate field
+        :return:
+        """
         if not self.is_active:
             self.is_active = True
             self.value += "|"
             self.text.set_text(self.value)
 
     def disactivate(self):
+        """
+        disactivate field
+        :return:
+        """
         if self.is_active:
             self.value = self.value[:-1]
             self.is_active = False
             self.text.set_text(self.value)
 
     def check_mouse(self):
+        """
+        check mouse position
+        :return:
+        """
         if self.x < pygame.mouse.get_pos()[0] < self.x + self.width and self.y < pygame.mouse.get_pos()[1] < self.y \
                 + self.height:
             return True
@@ -597,8 +672,19 @@ class InsertField(Field):
 
 
 class ChoiceField(Field):
+    """
+    class for choosing buttons
+    """
 
     def __init__(self, x, y, elements, screen, start_choice=0):
+        """
+        init function
+        :param x: x position
+        :param y: y position
+        :param elements: elements
+        :param screen: surface
+        :param start_choice: start parameter
+        """
         self.choice = start_choice
         self.elements = elements
         self.x = x
@@ -608,6 +694,10 @@ class ChoiceField(Field):
         self.is_alive = True
 
     def check_mouse(self):
+        """
+        check mouse position
+        :return:
+        """
         if self.is_alive:
             mouse_pos = pygame.mouse.get_pos()
             if self.x < mouse_pos[0] < self.x + 15 and self.y < mouse_pos[1] < self.y + 40:
@@ -625,18 +715,39 @@ class ChoiceField(Field):
                 self.text.set_text("< " + self.elements[self.choice] + " >")
 
     def draw(self):
+        """
+        draw text in the screen
+        :return:
+        """
         self.text.draw()
 
     def deactivate(self):
+        """
+        deactivate field
+        :return:
+        """
         self.is_alive = False
 
     def activate(self):
+        """
+        activate field
+        :return:
+        """
         self.is_alive = True
 
 
 class ClickField(Field):
+    """
+    class for click fields
+    """
 
     def __init__(self, x, y, screen):
+        """
+        init function
+        :param x: x position
+        :param y: y position
+        :param screen: surface
+        """
         self.r = 14
         self.x = x + self.r
         self.y = y + 1.2 * self.r
@@ -645,6 +756,10 @@ class ClickField(Field):
         self.is_alive = True
 
     def draw(self):
+        """
+        draw text on the screen
+        :return:
+        """
         if self.is_alive:
             pygame.draw.circle(self.screen, WHITE, (self.x, self.y), self.r)
             if self.is_active:
@@ -653,24 +768,53 @@ class ClickField(Field):
             pygame.draw.circle(self.screen, GREY, (self.x, self.y), self.r)
 
     def change(self):
+        """
+        change button's clickable
+        :return:
+        """
         if self.is_alive:
             self.is_active = not self.is_active
 
     def check_mouse(self):
+        """
+        check mouse position
+        :return:
+        """
         mouse_pos = pygame.mouse.get_pos()
         if np.sqrt((mouse_pos[0] - self.x) ** 2 + (mouse_pos[1] - self.y) ** 2) < self.r:
             self.change()
 
     def deactivate(self):
+        """
+        deactivate field
+        :return:
+        """
         self.is_alive = False
 
     def activate(self):
+        """
+        activate field
+        :return:
+        """
         self.is_alive = True
 
 
 class Button(Field):
+    """
+    class for buttons
+    """
 
     def __init__(self, x, y, w, h, text, screen, color=YELLOW):
+        """
+        init function
+        :param x: x position
+        :param y: y position
+        :param w: width
+        :param h: height
+        :param text: text
+        :param screen: surface
+        :param color: color
+        """
         self.x = x
         self.y = y
         self.screen = screen
@@ -683,10 +827,18 @@ class Button(Field):
                                self.h, self.screen, self.color)
 
     def draw(self):
+        """
+        draw text on the screen
+        :return:
+        """
         pygame.draw.rect(self.screen, self.color, (self.x, self.y, self.w, self.h))
         self.text_class.draw()
 
     def check_mouse(self):
+        """
+        check mouse position
+        :return:
+        """
         mouse_pos = pygame.mouse.get_pos()
         if self.x < mouse_pos[0] < self.x + self.w and self.y < mouse_pos[1] < self.y + self.h:
             self.is_active = True

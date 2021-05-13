@@ -1,9 +1,6 @@
 import pygame
 import graphics
 
-# testing
-# you can change the method here
-
 pygame.init()
 screen = pygame.display.set_mode((1200, 800))
 menu = graphics.Menu(screen)
