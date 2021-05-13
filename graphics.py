@@ -1,5 +1,4 @@
 import pygame
-import geopandas as gpd
 import numpy as np
 from abc import abstractmethod
 from trasfomation import to_kepler, to_polar
@@ -38,7 +37,6 @@ forces = [g_force, air_force, sun_force]
 
 
 class Window:
-
     """
     abstract class for all program's windows
     """
@@ -64,7 +62,6 @@ class Window:
 
 
 class Menu(Window):
-
     """
     class of first window of program, where inits all parameters
     """
@@ -228,6 +225,11 @@ class Animation(Window):
         self.plot_y = 50
         self.x_axis = x_axis
         self.y_axis = y_axis
+        self.long = np.zeros(len(self.input))
+        self.lang = np.zeros(len(self.input))
+        for i in range(len(self.input)):
+            self.long[i] = to_polar(self.input[i])[0]
+            self.lang[i] = to_polar(self.input[i])[1]
 
     def run(self):
         """
@@ -238,16 +240,12 @@ class Animation(Window):
         clock = pygame.time.Clock()
         while not finished:
             clock.tick(FPS)
-            long, lang = to_polar(self.input[self.counter:self.counter + 6])
-            self.plot_map(self.screen, long, lang)
-            # if self.counter % self.plot_step == 0:
-            #     self.plot()
+            self.plot_map(self.screen, self.counter)
             self.draw_objects()
-            # time.sleep(self.dt)
             self.counter += self.acceleration
             self.plot(self.x, self.y, self.counter, self.x_axis, self.y_axis)
-            self.print_kepler_coord(self.screen, self.display, self.input[self.counter:self.counter + 6])
-            self.print_gcrs_coord(self.screen, self.display, self.input[self.counter:self.counter + 6])
+            self.print_kepler_coord(self.screen, self.display, self.input[self.counter])
+            self.print_gcrs_coord(self.screen, self.display, self.input[self.counter])
             pygame.display.update()
             self.screen.fill(WHITE)
             for event in pygame.event.get():
@@ -265,8 +263,9 @@ class Animation(Window):
             if keys[pygame.K_LEFT]:
                 self.dx -= 2
 
-            if self.counter > len(self.coordinates) - 1:
-                finished = True
+            if self.counter > len(self.input) - 5:
+                self.acceleration = 0
+                self.print_done(self.screen, self.display)
 
     def plot(self, x, y, counter, x_title="", y_title=""):
         """
@@ -319,6 +318,13 @@ class Animation(Window):
                                                           self.screen.get_height() / 2 + new_co[1] + self.dy], 10)
 
     @staticmethod
+    def print_done(screen, display_size):
+        font = pygame.font.Font(None, 10)
+        font_color = (0, 255, 0)
+        text = font.render("ALL DONE", True, font_color)
+        screen.blit(text, [display_size[0] * 0.5, display_size[1] * 0.5])
+
+    @staticmethod
     def print_gcrs_coord(screen, display_size, q):
         """
         print satellite's coordinates in GCRS
@@ -366,23 +372,23 @@ class Animation(Window):
         for i in range(6):
             screen.blit(text_surface[i], [display_size[0] * 0.6, display_size[1] * 0.75 + i * 20])
 
-    def plot_map(self, screen, x, y):
+    def plot_map(self, screen, counter):
         """
-        draw sattelite's dot on Earth
+        draw satellite's dot on Earth
+        :param counter: global counter
         :param screen: surface
-        :param x: latitude
-        :param y: longitude
         :return: picture
         """
         plot_surf = pygame.image.load("plot_map.png")
         plot_surf = pygame.transform.scale(plot_surf, (int(500 * 1.2), int(300 * 1.1)))
         plot_rect = plot_surf.get_rect(bottomright=(610, 750))
         screen.blit(plot_surf, plot_rect)
-        pygame.draw.circle(self.screen, (0, 255, 0), [300 + x, 570 + y], 5)
+        for i in range(0, counter - 1):
+            pygame.draw.line(self.screen, (0, 255, 0), (310 + self.lang[i], 575 + self.long[i] * 0.6),
+                             (310 + self.lang[i + 1], 575 + self.long[i + 1] * 0.6), 4)
 
 
 class LoadingWindow(Window):
-
     """
     class loading, second window, where make integration and output load line
     """
@@ -396,13 +402,7 @@ class LoadingWindow(Window):
         # param = np.array([x, y, z, vx, vy, vz, time, step,
         #          x-axis, y-axis, air_force, sun_force, integrator, is_finished)
         self.screen = screen
-        self.mas_x = np.array([])
-        self.mas_y = np.array([])
-        self.x_axis = param[8]
-        self.y_axis = param[9]
-        self.clock = 0
-        self.mas_t = np.array([0])
-        self.mas_dt = np.array([])
+        self.duration = param[6]
         self.integrator = integrators[param[12]]
         self.integrator.dt = param[7]
         self.integrator.forces = np.array([])
@@ -413,10 +413,29 @@ class LoadingWindow(Window):
             force_numbers = np.append(force_numbers, 2)
         for i in force_numbers:
             self.integrator.forces = np.append(self.integrator.forces, forces[i])
-        self.duration = param[6]
-        self.q = np.array([param[0], param[1], param[2], param[3], param[4], param[5]])
-        self.output = np.array([[self.q]])
-        self.position = np.array([[self.q[0], self.q[1], self.q[2]]], dtype=object)
+        self.curr_x = 0
+        self.curr_y = 0
+        self.curr_t = 0
+        self.curr_dt = self.integrator.dt
+        self.curr_q = np.array([param[0], param[1], param[2], param[3], param[4], param[5]])
+        self.mas_x = np.zeros(int(self.duration / self.integrator.dt))
+        self.mas_y = np.zeros(int(self.duration / self.integrator.dt))
+        self.x_axis = param[8]
+        self.y_axis = param[9]
+        if self.x_axis < 6:
+            self.mas_x[0] = self.curr_q[self.x_axis]
+        if self.y_axis < 6:
+            self.mas_y[0] = self.curr_q[self.y_axis]
+        self.clock = 0
+        self.counter = 0
+        # self.mas_t = np.array([0])
+        # self.mas_dt = np.array([])
+        self.output = np.zeros(int(self.duration / self.integrator.dt) * 6)
+        self.output.shape = (int(self.duration / self.integrator.dt), 6)
+        self.output[0] = self.curr_q
+        self.position = np.zeros(int(self.duration / self.integrator.dt) * 3)
+        self.position.shape = (int(self.duration / self.integrator.dt), 3)
+        self.position[0] = self.curr_q[:3]
 
     def run(self):
         """
@@ -430,32 +449,36 @@ class LoadingWindow(Window):
                 if event.type == pygame.QUIT:
                     return 0
 
-            pos = np.array([[self.q[0] / 25000, self.q[1] / 25000, self.q[2] / 25000]])
-            self.position = np.append(self.position, pos, axis=0)
-            # print(pos)
-            if self.x_axis < 6:
-                self.mas_x = np.append(self.mas_x, self.q[self.x_axis])
-            else:
-                self.mas_x = self.mas_t
-            if self.y_axis < 6:
-                self.mas_y = np.append(self.mas_y, self.q[self.y_axis])
-            else:
-                self.mas_y = self.mas_t
+            self.counter += 1
             self.clock += self.integrator.dt
-            self.mas_t = np.append(self.mas_t, self.clock)
-            self.mas_dt = np.append(self.mas_dt, self.integrator.dt)
-            self.q = self.integrator.calc_next_step(self.q, 0)
-            self.output = np.append(self.output, np.array([self.q]))
-            if max(self.mas_t) > self.duration:
+            self.curr_q = self.integrator.calc_next_step(self.curr_q, 0)
+            np.save("load/ballistic%s.npy" % self.counter, self.curr_q)
+            if self.clock > self.duration:
                 return 1
 
             if i % 300 == 0:
-                self.create_text("Loading " + str(round(max(self.mas_t) / self.duration * 100)) + "%", WHITE,
+                self.create_text("Loading " + str(round(self.clock / self.duration * 100)) + "%", WHITE,
                                  (350, 350),
                                  100, self.screen)
                 pygame.display.update()
                 self.screen.fill(BLACK)
             i += 1
+
+    def check(self):
+        for i in range(1, self.counter - 1):
+            f = np.load("load/ballistic%s.npy" % i)
+            self.output[i] = f
+            if self.x_axis < 6:
+                self.mas_x[i] = f[self.x_axis]
+            else:
+                self.mas_x[i] = i * self.curr_dt
+                # self.mas_x = self.mas_t
+            if self.y_axis < 6:
+                self.mas_y[i] = f[self.y_axis]
+            else:
+                self.mas_y[i] = i * self.curr_dt
+            self.position[i] = f[0:3] / 25000
+        return True
 
 
 class Field:
@@ -464,7 +487,8 @@ class Field:
     def draw(self):
         pass
 
-    def create_text(self, text, color1, position, size, screen, color2=WHITE):
+    @staticmethod
+    def create_text(text, color1, position, size, screen, color2=WHITE):
         f1 = pygame.font.Font(None, size)
         text1 = f1.render(text, True,
                           color1, color2)
@@ -503,7 +527,7 @@ class InsertField(Field):
             self.is_active = False
 
     def check_mouse(self):
-        if self.x < pygame.mouse.get_pos()[0] < self.x + self.width and self.y < pygame.mouse.get_pos()[1] < self.y\
+        if self.x < pygame.mouse.get_pos()[0] < self.x + self.width and self.y < pygame.mouse.get_pos()[1] < self.y \
                 + self.height:
             return True
         else:

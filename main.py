@@ -10,8 +10,9 @@ menu = graphics.Menu(screen)
 parameters = menu.run()
 if not parameters[len(parameters) - 1]:
     load = graphics.LoadingWindow(screen, parameters)
-    a = load.run()
-    if a:
+    load.run()
+    load.check()
+    if load.check():
         axis = ['x, m', 'y, m', 'z, m', 'vx, m/s', 'vy, m/s', 'vz, m/s', 't, s']
         anim = graphics.Animation(load.mas_x, load.mas_y, load.position, load.output, screen, 1,
                                   axis[load.x_axis], axis[load.y_axis])

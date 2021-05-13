@@ -20,7 +20,8 @@ def to_polar(q):
         phi = 0.5 * np.pi
     elif q[0] == 0 and q[1] < 0:
         phi = -0.5 * np.pi
-    else: phi = 0
+    else:
+        phi = 0
 
     return np.array([phi * 180 / np.pi, theta * 180 / np.pi])
 

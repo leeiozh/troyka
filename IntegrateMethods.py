@@ -3,8 +3,17 @@ from abc import abstractmethod
 
 
 class Integrator:
+    """
+    integrator's base class
+    """
 
     def __init__(self, dt, m, forces):
+        """
+        init function
+        :param dt: time step
+        :param m: mass
+        :param forces: type of forces
+        """
         self.m = m
         self.dt = dt
         self.forces = forces
@@ -24,6 +33,12 @@ class Integrator:
         """
 
     def calc_resultant_force(self, state, time):
+        """
+        calculate resultant force
+        :param state: current q
+        :param time: time
+        :return:
+        """
         resultant = np.array([0, 0, 0])
         for count in range(len(self.forces)):
             force = self.forces[count].calc(state, time)
@@ -71,6 +86,12 @@ class EulerMethod1(Integrator):
 class EulerMethod2(Integrator):
 
     def calc_next_step(self, state, time):
+        """
+        Return state after dt
+        :param state: (x, y, z, vx, vy, vz)
+        :param time:
+        :return: (x, y, z, vx, vy, vz)
+        """
         forces = self.calc_resultant_force(state, time)
         derivative = np.array([state[3], state[4], state[5], forces[0] / self.m, forces[1] / self.m,
                                forces[2] / self.m])
@@ -116,10 +137,11 @@ class RK4Method(Integrator):
 
 class DormandPrinceMethod(Integrator):
 
-    b = np.array([[], [1/5], [3/40, 9/40], [44/45, -56/15, 32/9],
-                       [19372/6561, -25360/2187, 64448/6561, -212/729],
-                       [9017/3168, -355/33, -46732/5247, 49/176, -5103/18656],
-                       [35/384, 0, 500/1113, 125/192, -2187/6784, 11/84]], dtype=object)
+    b = np.array([[],
+                  [1/5], [3/40, 9/40], [44/45, -56/15, 32/9],
+                  [19372/6561, -25360/2187, 64448/6561, -212/729],
+                  [9017/3168, -355/33, -46732/5247, 49/176, -5103/18656],
+                  [35/384, 0, 500/1113, 125/192, -2187/6784, 11/84]], dtype=object)
     k1 = np.array([35/384, 0, 500/1113, 125/192, -2187/6784, 11/84, 0])
     k2 = np.array([5179/57600, 0, 7571/16695, 393/640, -92097/339200, 187/2100, 1/40])
     c = np.array([0, 1/5, 3/10, 4/5, 8/9, 1, 1])
@@ -138,7 +160,8 @@ class DormandPrinceMethod(Integrator):
                                forces[2] / self.m])
         self.k[0] = derivative
         for i in range(1, len(DormandPrinceMethod.c)):
-            new_k = self.evaluate(state, np.dot(DormandPrinceMethod.b[i], self.k), DormandPrinceMethod.c[i] * self.dt, time)
+            new_k = self.evaluate(state, np.dot(DormandPrinceMethod.b[i], self.k), DormandPrinceMethod.c[i] * self.dt,
+                                  time)
             self.k = np.append(self.k, [new_k],
                                axis=0)
 
@@ -155,4 +178,3 @@ class DormandPrinceMethod(Integrator):
             self.dt = 2 * self.dt
 
         return next_step1
-
