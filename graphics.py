@@ -1,4 +1,5 @@
 import pygame
+import os
 import numpy as np
 from abc import abstractmethod
 from trasfomation import to_kepler, to_polar
@@ -193,7 +194,16 @@ class Menu(Window):
                                   self.field_integrator.choice, int(self.field_mass.value),
                                   self.load_click.is_active, self.save_click.is_active, self.field_filename1.value,
                                   self.field_filename2.value, False]
-                        return answer
+                        f = True
+                        if self.load_click.is_active:
+                            try:
+                                np.load(self.field_filename1.value + "/ballistic1.npy")
+                            except IOError:
+                                self.error_load(self.field_filename1.value)
+                                f = False
+                                continue
+                        if f:
+                            return answer
 
                 if event.type == pygame.KEYDOWN:
                     for f in self.insert_fields:
@@ -212,6 +222,10 @@ class Menu(Window):
             self.draw_objects()
             pygame.display.update()
             self.screen.fill(BLACK)
+
+    @staticmethod
+    def error_load(name):
+        print("Folder with name " + name + " doesn't exist")
 
     def draw_objects(self):
         """Draws all objects in the window"""
@@ -494,6 +508,11 @@ class LoadingWindow(Window):
         self.is_save = param[-4]
         self.load_file = param[-3]
         self.save_file = param[-2]
+        if self.is_save:
+            try:
+                np.load(self.save_file + "/ballistic1.npy")
+            except IOError:
+                os.mkdir(self.save_file)
 
     def run(self):
         """
@@ -542,7 +561,7 @@ class LoadingWindow(Window):
         :return: coordinates and velocities
         """
         for i in range(0, int(self.duration / self.integrator.dt)):
-            f = np.load(name + "/ballistic%s.npy" % (i))
+            f = np.load(name + "/ballistic%s.npy" % i)
             self.output[i] = f
             if self.x_axis < 6:
                 self.mas_x[i] = f[self.x_axis]
