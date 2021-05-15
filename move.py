@@ -21,6 +21,10 @@ class Player(pygame.sprite.Sprite):
         self.rect.center = (WIDTH / 2, HEIGHT / 2)
 
     def update(self):
+        """
+        move object
+        :return:
+        """
         self.rect.x += 5
         if self.rect.left > WIDTH:
             self.rect.right = 0
