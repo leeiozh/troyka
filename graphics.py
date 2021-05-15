@@ -243,7 +243,8 @@ class Animation(Window):
         :param x_axis: name for x-axis
         :param y_axis: name for y-axis
         """
-        self.matrix = np.array([[1, 0], [0, 1], [0, 0]])
+        self.accel_field = ChoiceField(650, 750, [1, 2, 3, 5, 10, 20, 50], screen)
+        self.matrix = np.array([[1, 0.2], [0.7, 1], [-1, 0]])
         self.display = (1200, 800)
         self.scale = 1
         self.finished = False
@@ -252,7 +253,7 @@ class Animation(Window):
         self.dy = 0
         self.counter = 0
         self.plot_step = 10
-        self.acceleration = 6
+        self.acceleration = 1
         self.x = x
         self.y = y
         self.coordinates = coordinates
@@ -279,8 +280,11 @@ class Animation(Window):
         clock = pygame.time.Clock()
         while not finished:
             clock.tick(FPS)
+            if self.acceleration:
+                self.acceleration = self.accel_field.elements[self.accel_field.choice]
             self.plot_map(self.screen, self.counter, self.display)
             self.draw_objects()
+            self.accel_field.draw()
             # time.sleep(self.dt)
             self.counter += self.acceleration
             self.plot(self.x, self.y, self.counter, self.x_axis, self.y_axis)
@@ -291,6 +295,9 @@ class Animation(Window):
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     finished = True
+
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    self.accel_field.check_mouse()
 
             keys = pygame.key.get_pressed()
 
@@ -307,7 +314,7 @@ class Animation(Window):
             elif keys[pygame.K_s]:
                 self.scale -= 0.02
 
-            if self.counter > len(self.input) - 5:
+            if self.counter + self.acceleration >= len(self.input):
                 self.acceleration = 0
 
     def plot(self, x, y, counter, x_title="", y_title=""):
@@ -355,8 +362,8 @@ class Animation(Window):
         pygame.draw.polygon(self.screen, [0, 0, 0], ([self.screen.get_width() / 2, 0], [self.screen.get_width(), 0],
                                                      [self.screen.get_width(), self.screen.get_height()],
                                                      [self.screen.get_width() / 2, self.screen.get_height()]))
-        pygame.draw.circle(self.screen, [0, 255, 255], [self.screen.get_width() * 0.75 + self.dx,
-                                                        self.screen.get_height() / 2 + self.dy], self.scale * 20)
+        pygame.draw.circle(self.screen, [0, 155, 255], [self.screen.get_width() * 0.75 + self.dx,
+                                                        self.screen.get_height() / 2 + self.dy], self.scale * 70)
         pygame.draw.circle(self.screen, [255, 255, 255], [self.screen.get_width() * 0.75 + self.scale * new_co[0]
                                                           + self.dx,
                                                           self.screen.get_height() / 2 + self.scale * new_co[1]
@@ -740,7 +747,7 @@ class ChoiceField(Field):
         self.x = x
         self.y = y
         self.screen = screen
-        self.text = Text("< > " + self.elements[self.choice], WHITE, (self.x, self.y), 40, self.screen, BLACK)
+        self.text = Text("< > " + str(self.elements[self.choice]), WHITE, (self.x, self.y), 40, self.screen, BLACK)
         self.is_alive = True
 
     def check_mouse(self):
@@ -755,13 +762,13 @@ class ChoiceField(Field):
                     self.choice -= 1
                 else:
                     self.choice = len(self.elements) - 1
-                self.text.set_text("< > " + self.elements[self.choice])
+                self.text.set_text("< > " + str(self.elements[self.choice]))
             elif self.x + 25 < mouse_pos[0] < self.x + 40 and self.y < mouse_pos[1] < self.y + 40:
                 if self.choice < len(self.elements) - 1:
                     self.choice += 1
                 else:
                     self.choice = 0
-                self.text.set_text("< > " + self.elements[self.choice])
+                self.text.set_text("< > " + str(self.elements[self.choice]))
 
     def draw(self):
         """
