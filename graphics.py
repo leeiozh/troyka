@@ -150,18 +150,18 @@ class Menu(Window):
             clock.tick(FPS)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    return np.array([True])
+                    return [0, [True]]
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     for f in self.insert_fields:
                         if f.check_mouse() and not self.load_click.is_active:
                             f.activate()
                         else:
-                            f.disactivate()
+                            f.deactivate()
 
                     if self.field_filename.check_mouse():
                         self.field_filename.activate()
                     else:
-                        self.field_filename.disactivate()
+                        self.field_filename.deactivate()
 
                     for f in self.choice_fields:
                         f.check_mouse()
@@ -242,6 +242,7 @@ class Animation(Window):
         """
         self.matrix = np.array([[0, -0.5], [-1, -0.3], [1, 1]])
         self.display = (1200, 800)
+        self.scale = 1
         self.finished = False
         self.dt = delta_t
         self.dx = 0
@@ -275,7 +276,7 @@ class Animation(Window):
         clock = pygame.time.Clock()
         while not finished:
             clock.tick(FPS)
-            self.plot_map(self.screen, self.counter)
+            self.plot_map(self.screen, self.counter, self.display)
             self.draw_objects()
             # time.sleep(self.dt)
             self.counter += self.acceleration
@@ -291,13 +292,17 @@ class Animation(Window):
             keys = pygame.key.get_pressed()
 
             if keys[pygame.K_DOWN]:
-                self.dy += 2
-            if keys[pygame.K_UP]:
                 self.dy -= 2
-            if keys[pygame.K_RIGHT]:
-                self.dx += 2
-            if keys[pygame.K_LEFT]:
+            elif keys[pygame.K_UP]:
+                self.dy += 2
+            elif keys[pygame.K_RIGHT]:
                 self.dx -= 2
+            elif keys[pygame.K_LEFT]:
+                self.dx += 2
+            elif keys[pygame.K_w]:
+                self.scale += 0.02
+            elif keys[pygame.K_s]:
+                self.scale -= 0.02
 
             if self.counter > len(self.input) - 5:
                 self.acceleration = 0
@@ -348,9 +353,12 @@ class Animation(Window):
                                                      [self.screen.get_width(), self.screen.get_height()],
                                                      [self.screen.get_width() / 2, self.screen.get_height()]))
         pygame.draw.circle(self.screen, [0, 255, 255], [self.screen.get_width() * 0.75 + self.dx,
-                                                        self.screen.get_height() / 2 + self.dy], 20)
-        pygame.draw.circle(self.screen, [255, 255, 255], [self.screen.get_width() * 0.75 + new_co[0] + self.dx,
-                                                          self.screen.get_height() / 2 + new_co[1] + self.dy], 10)
+                                                        self.screen.get_height() / 2 + self.dy], self.scale * 20)
+        pygame.draw.circle(self.screen, [255, 255, 255], [self.screen.get_width() * 0.75 + self.scale * new_co[0]
+                                                          + self.dx,
+                                                          self.screen.get_height() / 2 + self.scale * new_co[1]
+                                                          + self.dy],
+                           self.scale * 10)
 
     @staticmethod
     def print_gcrs_coord(screen, display_size, q):
@@ -400,23 +408,28 @@ class Animation(Window):
         for i in range(6):
             screen.blit(text_surface[i], [display_size[0] * 0.6, display_size[1] * 0.75 + i * 20])
 
-    def plot_map(self, screen, counter):
+    def plot_map(self, screen, counter, display_size):
         """
         draw satellite's dot on Earth
+        :param display_size: display size
         :param counter: global counter
         :param screen: surface
         :return: picture
         """
         plot_surf = pygame.image.load("plot_map.png")
-        plot_surf = pygame.transform.scale(plot_surf, (int(500 * 1.2), int(300 * 1.1)))
-        plot_rect = plot_surf.get_rect(bottomright=(610, 750))
+        plot_surf = pygame.transform.scale(plot_surf, (
+            int(500 / 1200 * display_size[0] * 1.2), int(300 / 800 * display_size[1] * 1.1)))
+        plot_rect = plot_surf.get_rect(bottomright=(610 / 1200 * display_size[0], 750 / 800 * display_size[1]))
         screen.blit(plot_surf, plot_rect)
         for i in range(0, counter - 1):
             if (self.long[i] * self.long[i + 1]) < -10:
                 continue
             else:
-                pygame.draw.line(self.screen, (0, 255, 0), (310 + self.lang[i] + i * 0.005, 570 + self.long[i] * 0.6),
-                                 (310 + self.lang[i + 1] + i * 0.005, 570 + self.long[i + 1] * 0.6), 4)
+                pygame.draw.line(self.screen, (0, 255, 0),
+                                 ((310 / 1200 * display_size[0] + self.lang[i] + i * 0.005) / 1200
+                                  * display_size[0], (570 + self.long[i] * 0.65) / 800 * display_size[1]),
+                                 ((310 + self.lang[i + 1] + i * 0.005) / 1200 * display_size[0],
+                                  (570 + self.long[i + 1] * 0.65) / 800 * display_size[1]), 4)
 
 
 class LoadingWindow(Window):
@@ -432,6 +445,7 @@ class LoadingWindow(Window):
         #          x-axis, y-axis, air_force, sun_force, integrator, mass, is_finished)
         """
         self.screen = screen
+        self.display = (1200, 800)
         self.duration = param[6]
         self.mas_x = np.array([])
         self.mas_y = np.array([])
@@ -492,10 +506,11 @@ class LoadingWindow(Window):
             if self.clock > self.duration:
                 return 1
 
-            if i % 300 == 0:
+            if i % 50 == 0:
                 self.create_text("Loading " + str(round(self.clock / self.duration * 100)) + "%", WHITE,
                                  (350, 350),
                                  100, self.screen)
+                self.draw_rocket(self.screen, self.display, (self.clock / self.duration))
                 pygame.display.update()
                 self.screen.fill(BLACK)
             i += 1
@@ -518,6 +533,20 @@ class LoadingWindow(Window):
             else:
                 self.mas_y[i] = i * self.curr_dt
             self.position[i] = f[0:3] / 25000
+
+    @staticmethod
+    def draw_rocket(screen, display_size, speed):
+        """
+        draw rocket on the screen
+        :param screen: screen
+        :param display_size: display size
+        :param speed: rocket position
+        :return: picture
+        """
+        plot_surf = pygame.image.load("rocket.png")
+        plot_surf = pygame.transform.scale(plot_surf, (120, 120))
+        plot_rect = plot_surf.get_rect(bottomright=((display_size[0] + 124) * speed, 0.7 * display_size[1]))
+        screen.blit(plot_surf, plot_rect)
 
 
 class Text:
@@ -586,6 +615,7 @@ class Field:
     """
     base class for all fields
     """
+
     @abstractmethod
     def draw(self):
         """
@@ -649,7 +679,7 @@ class InsertField(Field):
             self.value += "|"
             self.text.set_text(self.value)
 
-    def disactivate(self):
+    def deactivate(self):
         """
         disactivate field
         :return:
@@ -690,7 +720,7 @@ class ChoiceField(Field):
         self.x = x
         self.y = y
         self.screen = screen
-        self.text = Text("< " + self.elements[self.choice] + " >", WHITE, (self.x, self.y), 40, self.screen, BLACK)
+        self.text = Text("< > " + self.elements[self.choice], WHITE, (self.x, self.y), 40, self.screen, BLACK)
         self.is_alive = True
 
     def check_mouse(self):
@@ -705,14 +735,13 @@ class ChoiceField(Field):
                     self.choice -= 1
                 else:
                     self.choice = len(self.elements) - 1
-                self.text.set_text("< " + self.elements[self.choice] + " >")
-            elif self.x + 15 * (len(self.elements[self.choice]) + 2) < mouse_pos[0] < self.x + 15 * (
-                    len(self.elements[self.choice]) + 6) and self.y < mouse_pos[1] < self.y + 40:
+                self.text.set_text("< > " + self.elements[self.choice])
+            elif self.x + 25 < mouse_pos[0] < self.x + 40 and self.y < mouse_pos[1] < self.y + 40:
                 if self.choice < len(self.elements) - 1:
                     self.choice += 1
                 else:
                     self.choice = 0
-                self.text.set_text("< " + self.elements[self.choice] + " >")
+                self.text.set_text("< > " + self.elements[self.choice])
 
     def draw(self):
         """
