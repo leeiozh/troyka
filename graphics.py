@@ -542,7 +542,7 @@ class LoadingWindow(Window):
         :return: coordinates and velocities
         """
         for i in range(0, int(self.duration / self.integrator.dt)):
-            f = np.load(name + "/ballistic%s.npy" % (i + 1))
+            f = np.load(name + "/ballistic%s.npy" % (i))
             self.output[i] = f
             if self.x_axis < 6:
                 self.mas_x[i] = f[self.x_axis]
@@ -564,8 +564,8 @@ class LoadingWindow(Window):
         :return: picture
         """
         plot_surf = pygame.image.load("rocket.png")
-        plot_surf = pygame.transform.scale(plot_surf, (120, 120))
-        plot_rect = plot_surf.get_rect(bottomright=((display_size[0] + 124) * speed, 0.7 * display_size[1]))
+        plot_surf = pygame.transform.scale(plot_surf, (200, 200))
+        plot_rect = plot_surf.get_rect(bottomright=((display_size[0] + 201) * speed, 0.75 * display_size[1]))
         screen.blit(plot_surf, plot_rect)
 
 
