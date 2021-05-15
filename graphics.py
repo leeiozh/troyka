@@ -150,7 +150,7 @@ class Menu(Window):
             clock.tick(FPS)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    return np.array([True])
+                    return [0, [True]]
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     for f in self.insert_fields:
                         if f.check_mouse() and not self.load_click.is_active:
@@ -276,11 +276,11 @@ class Animation(Window):
         clock = pygame.time.Clock()
         while not finished:
             clock.tick(FPS)
-            self.plot_map(self.screen, self.counter)
+            self.plot_map(self.screen, self.counter, self.display)
             self.draw_objects()
             # time.sleep(self.dt)
             self.counter += self.acceleration
-            # self.plot(self.x, self.y, self.counter, self.x_axis, self.y_axis)
+            self.plot(self.x, self.y, self.counter, self.x_axis, self.y_axis)
             self.print_kepler_coord(self.screen, self.display, self.input[self.counter])
             self.print_gcrs_coord(self.screen, self.display, self.input[self.counter])
             pygame.display.update()
@@ -408,23 +408,28 @@ class Animation(Window):
         for i in range(6):
             screen.blit(text_surface[i], [display_size[0] * 0.6, display_size[1] * 0.75 + i * 20])
 
-    def plot_map(self, screen, counter):
+    def plot_map(self, screen, counter, display_size):
         """
         draw satellite's dot on Earth
+        :param display_size: display size
         :param counter: global counter
         :param screen: surface
         :return: picture
         """
         plot_surf = pygame.image.load("plot_map.png")
-        plot_surf = pygame.transform.scale(plot_surf, (int(500 * 1.2), int(300 * 1.1)))
-        plot_rect = plot_surf.get_rect(bottomright=(610, 750))
+        plot_surf = pygame.transform.scale(plot_surf, (
+            int(500 / 1200 * display_size[0] * 1.2), int(300 / 800 * display_size[1] * 1.1)))
+        plot_rect = plot_surf.get_rect(bottomright=(610 / 1200 * display_size[0], 750 / 800 * display_size[1]))
         screen.blit(plot_surf, plot_rect)
         for i in range(0, counter - 1):
             if (self.long[i] * self.long[i + 1]) < -10:
                 continue
             else:
-                pygame.draw.line(self.screen, (0, 255, 0), (310 + self.lang[i] + i * 0.005, 570 + self.long[i] * 0.6),
-                                 (310 + self.lang[i + 1] + i * 0.005, 570 + self.long[i + 1] * 0.6), 4)
+                pygame.draw.line(self.screen, (0, 255, 0),
+                                 ((310 / 1200 * display_size[0] + self.lang[i] + i * 0.005) / 1200
+                                  * display_size[0], (570 + self.long[i] * 0.65) / 800 * display_size[1]),
+                                 ((310 + self.lang[i + 1] + i * 0.005) / 1200 * display_size[0],
+                                  (570 + self.long[i + 1] * 0.65) / 800 * display_size[1]), 4)
 
 
 class LoadingWindow(Window):
@@ -440,6 +445,7 @@ class LoadingWindow(Window):
         #          x-axis, y-axis, air_force, sun_force, integrator, mass, is_finished)
         """
         self.screen = screen
+        self.display = (1200, 800)
         self.duration = param[6]
         self.mas_x = np.array([])
         self.mas_y = np.array([])
@@ -500,10 +506,11 @@ class LoadingWindow(Window):
             if self.clock > self.duration:
                 return 1
 
-            if i % 300 == 0:
+            if i % 50 == 0:
                 self.create_text("Loading " + str(round(self.clock / self.duration * 100)) + "%", WHITE,
                                  (350, 350),
                                  100, self.screen)
+                self.draw_rocket(self.screen, self.display, (self.clock / self.duration))
                 pygame.display.update()
                 self.screen.fill(BLACK)
             i += 1
@@ -526,6 +533,20 @@ class LoadingWindow(Window):
             else:
                 self.mas_y[i] = i * self.curr_dt
             self.position[i] = f[0:3] / 25000
+
+    @staticmethod
+    def draw_rocket(screen, display_size, speed):
+        """
+        draw rocket on the screen
+        :param screen: screen
+        :param display_size: display size
+        :param speed: rocket position
+        :return: picture
+        """
+        plot_surf = pygame.image.load("rocket.png")
+        plot_surf = pygame.transform.scale(plot_surf, (120, 120))
+        plot_rect = plot_surf.get_rect(bottomright=((display_size[0] + 124) * speed, 0.7 * display_size[1]))
+        screen.blit(plot_surf, plot_rect)
 
 
 class Text:
@@ -594,6 +615,7 @@ class Field:
     """
     base class for all fields
     """
+
     @abstractmethod
     def draw(self):
         """

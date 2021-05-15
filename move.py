@@ -16,7 +16,7 @@ BLUE = (0, 0, 255)
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.image.load("MilitaryRocketWithFlames.png")
+        self.image = pygame.image.load("rocket.png")
         self.rect = self.image.get_rect()
         self.rect.center = (WIDTH / 2, HEIGHT / 2)
 
@@ -71,5 +71,3 @@ pygame.quit()
 #    window.blit(screen, (0, 0))
 #    screen.blit(cube, (x_cube, 100))
 #    pg.display.update()
-
-pg.quit()

@@ -48,7 +48,7 @@ def to_kepler(q):
     cos_Omega = - c2 / c / np.sin(i)
     Omega = np.arcsin(c1 / c / np.sin(i))
     if cos_Omega < 0:
-        Omega = 180 - Omega
+        Omega = np.pi - Omega
 
     v2 = np.linalg.norm(q[3:]) ** 2
 
