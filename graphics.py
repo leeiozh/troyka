@@ -83,20 +83,22 @@ class Menu(Window):
         self.field_vy = InsertField(6780, col4_x, 225, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
         self.field_vz = InsertField(1000, col4_x, 300, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
         self.field_step = InsertField(1, col4_x, 375, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
-        self.field_filename = InsertField("test0", col4_x + 50, 600, FIELD_WIDTH - 30, FIELD_HEIGHT, self.screen)
+        self.field_filename1 = InsertField("load", col4_x + 50, 600, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
+        self.field_filename2 = InsertField("save", col4_x + 50, 700, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
         self.field_mass = InsertField("100", col4_x, 75, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
         self.field_integrator = ChoiceField(col1_x + 200, 455, ["EulerMethod", "RK4Method", "DorPrMethod"], screen, 1)
         self.field_x_plot = ChoiceField(col4_x + 200, 455, ["x", "y", "z", "vx", "vy", "vz", "time"], screen, 6)
-        self.field_y_plot = ChoiceField(col4_x + 200, 505, ["x", "y", "z", "vx", "vy", "vz", "time"], screen)
+        self.field_y_plot = ChoiceField(col4_x + 200, 495, ["x", "y", "z", "vx", "vy", "vz", "time"], screen)
         self.air_force_click = ClickField(col1_x, 575, self.screen)
         self.sun_force_click = ClickField(col1_x, 625, self.screen)
         self.load_click = ClickField(col3_x, 550, self.screen)
+        self.save_click = ClickField(col3_x, 650, self.screen)
         self.insert_fields = np.array([self.field_x, self.field_y, self.field_z, self.field_vx, self.field_vy,
-                                       self.field_vz, self.field_t, self.field_step, self.field_filename,
-                                       self.field_mass])
+                                       self.field_vz, self.field_t, self.field_step, self.field_filename2,
+                                       self.field_filename1, self.field_mass])
         self.choice_fields = np.array([self.field_integrator, self.field_x_plot, self.field_y_plot])
-        self.click_fields = np.array([self.air_force_click, self.sun_force_click, self.load_click])
-        self.start_button = Button(500, 670, 200, 70, "Start!", self.screen)
+        self.click_fields = np.array([self.air_force_click, self.sun_force_click, self.load_click, self.save_click])
+        self.start_button = Button(200, 680, 200, 70, "Start!", self.screen)
 
         self.text1 = Text("x:", WHITE, (col1_x, 150), 50, self.screen)
         self.text2 = Text("y:", WHITE, (col1_x, 225), 50, self.screen)
@@ -121,18 +123,20 @@ class Menu(Window):
         self.text21 = Text("Integrator: ", YELLOW, (col1_x, 450), 50, self.screen)
         self.text22 = Text("Plot:", YELLOW, (col3_x, 450), 50, self.screen)
         self.text23 = Text("x-axis ", WHITE, (col4_x, 450), 50, self.screen)
-        self.text24 = Text("y-axis ", WHITE, (col4_x, 500), 50, self.screen)
+        self.text24 = Text("y-axis ", WHITE, (col4_x, 490), 50, self.screen)
         self.text25 = Text("Additional forces:", YELLOW, (col1_x, 525), 50, self.screen)
         self.text26 = Text("Atmosphere resistance", WHITE, (col1_x + 60, 575), 50, self.screen)
         self.text27 = Text("Light pressure", WHITE, (col1_x + 60, 625), 50, self.screen)
         self.text28 = Text("Open from file:", YELLOW, (col3_x + 40, 550), 50, self.screen)
         self.text29 = Text("filename", WHITE, (col3_x, 600), 50, self.screen)
+        self.text30 = Text("Save to file:", YELLOW, (col3_x + 40, 650), 50, self.screen)
+        self.text31 = Text("filename", WHITE, (col3_x, 700), 50, self.screen)
 
         self.texts = np.array([self.text1, self.text2, self.text3, self.text4, self.text5, self.text6, self.text7,
                                self.text8, self.text9, self.text10, self.text11, self.text12, self.text13, self.text14,
                                self.text15, self.text16, self.text17, self.text18, self.text19, self.text20,
                                self.text21, self.text22, self.text23, self.text24, self.text25, self.text26,
-                               self.text27, self.text28, self.text29])
+                               self.text27, self.text28, self.text29, self.text30, self.text31])
 
     def run(self):
         """
@@ -150,7 +154,7 @@ class Menu(Window):
             clock.tick(FPS)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    return [0, [True]]
+                    return np.array([True])
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     for f in self.insert_fields:
                         if f.check_mouse() and not self.load_click.is_active:
@@ -158,10 +162,10 @@ class Menu(Window):
                         else:
                             f.deactivate()
 
-                    if self.field_filename.check_mouse():
-                        self.field_filename.activate()
+                    if self.field_filename1.check_mouse():
+                        self.field_filename1.activate()
                     else:
-                        self.field_filename.deactivate()
+                        self.field_filename1.deactivate()
 
                     for f in self.choice_fields:
                         f.check_mouse()
@@ -173,7 +177,7 @@ class Menu(Window):
                                  self.text8, self.text9, self.text10, self.text11, self.text12, self.text13,
                                  self.text14, self.text15, self.text16, self.text17, self.text18, self.text20,
                                  self.field_integrator, self.text25, self.text26, self.text27, self.air_force_click,
-                                 self.sun_force_click, self.text21]:
+                                 self.sun_force_click, self.text21, self.save_click, self.text30, self.text31]:
                         if self.load_click.is_active:
                             text.deactivate()
                         else:
@@ -186,16 +190,15 @@ class Menu(Window):
                                   float(self.field_t.value), float(self.field_step.value),
                                   self.field_x_plot.choice, self.field_y_plot.choice,
                                   self.air_force_click.is_active, self.sun_force_click.is_active,
-                                  self.field_integrator.choice, int(self.field_mass.value), False]
-                        if self.load_click.is_active:
-                            return [self.field_filename.value, answer]
-                        else:
-                            return ["load", answer]
+                                  self.field_integrator.choice, int(self.field_mass.value),
+                                  self.load_click.is_active, self.save_click.is_active, self.field_filename1.value,
+                                  self.field_filename2.value, False]
+                        return answer
 
                 if event.type == pygame.KEYDOWN:
                     for f in self.insert_fields:
                         if event.key == 13:
-                            f.disactivate()
+                            f.deactivate()
                         if event.key == pygame.K_BACKSPACE:
                             if f.is_active and f.value != "":
                                 f.value = f.value[:-2]
@@ -240,7 +243,7 @@ class Animation(Window):
         :param x_axis: name for x-axis
         :param y_axis: name for y-axis
         """
-        self.matrix = np.array([[0, -0.5], [-1, -0.3], [1, 1]])
+        self.matrix = np.array([[1, 0], [0, 1], [0, 0]])
         self.display = (1200, 800)
         self.scale = 1
         self.finished = False
@@ -442,7 +445,8 @@ class LoadingWindow(Window):
         init function
         :param screen: surface
         :param param: np.array([x, y, z, vx, vy, vz, time, step,
-        #          x-axis, y-axis, air_force, sun_force, integrator, mass, is_finished)
+        #          x-axis, y-axis, air_force, sun_force, integrator, mass, is_load,
+        is_save, file1, file2, is_finished)
         """
         self.screen = screen
         self.display = (1200, 800)
@@ -486,6 +490,10 @@ class LoadingWindow(Window):
         self.position = np.zeros(int(self.duration / self.integrator.dt) * 3)
         self.position.shape = (int(self.duration / self.integrator.dt), 3)
         self.position[0] = self.curr_q[:3]
+        self.is_load = param[-5]
+        self.is_save = param[-4]
+        self.load_file = param[-3]
+        self.save_file = param[-2]
 
     def run(self):
         """
@@ -493,27 +501,39 @@ class LoadingWindow(Window):
         :return: all ballistics parameters
         """
         finished = False
-        i = 0
         while not finished:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     return 0
 
-            self.counter += 1
             self.clock += self.integrator.dt
             self.curr_q = self.integrator.calc_next_step(self.curr_q, 0)
-            np.save("load/ballistic%s.npy" % self.counter, self.curr_q)
-            if self.clock > self.duration:
+            if self.is_load:
+                self.check(self.load_file)
+                return 1
+            if self.is_save:
+                np.save(self.save_file + "/ballistic%s.npy" % self.counter, self.curr_q)
+            self.output[self.counter] = self.curr_q
+            if self.x_axis < 6:
+                self.mas_x[self.counter] = self.curr_q[self.x_axis]
+            else:
+                self.mas_x[self.counter] = self.counter * self.curr_dt
+            if self.y_axis < 6:
+                self.mas_y[self.counter] = self.curr_q[self.y_axis]
+            else:
+                self.mas_y[self.counter] = self.counter * self.curr_dt
+            self.position[self.counter] = self.curr_q[0:3] / 25000
+            if self.clock >= self.duration:
                 return 1
 
-            if i % 50 == 0:
+            if self.counter % 50 == 0:
                 self.create_text("Loading " + str(round(self.clock / self.duration * 100)) + "%", WHITE,
                                  (350, 350),
                                  100, self.screen)
                 self.draw_rocket(self.screen, self.display, (self.clock / self.duration))
                 pygame.display.update()
                 self.screen.fill(BLACK)
-            i += 1
+            self.counter += 1
 
     def check(self, name):
         """
@@ -819,6 +839,7 @@ class ClickField(Field):
         :return:
         """
         self.is_alive = False
+        self.is_active = False
 
     def activate(self):
         """
