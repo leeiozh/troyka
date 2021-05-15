@@ -156,12 +156,12 @@ class Menu(Window):
                         if f.check_mouse() and not self.load_click.is_active:
                             f.activate()
                         else:
-                            f.disactivate()
+                            f.deactivate()
 
                     if self.field_filename.check_mouse():
                         self.field_filename.activate()
                     else:
-                        self.field_filename.disactivate()
+                        self.field_filename.deactivate()
 
                     for f in self.choice_fields:
                         f.check_mouse()
@@ -242,6 +242,7 @@ class Animation(Window):
         """
         self.matrix = np.array([[0, -0.5], [-1, -0.3], [1, 1]])
         self.display = (1200, 800)
+        self.scale = 1
         self.finished = False
         self.dt = delta_t
         self.dx = 0
@@ -279,7 +280,7 @@ class Animation(Window):
             self.draw_objects()
             # time.sleep(self.dt)
             self.counter += self.acceleration
-            self.plot(self.x, self.y, self.counter, self.x_axis, self.y_axis)
+            # self.plot(self.x, self.y, self.counter, self.x_axis, self.y_axis)
             self.print_kepler_coord(self.screen, self.display, self.input[self.counter])
             self.print_gcrs_coord(self.screen, self.display, self.input[self.counter])
             pygame.display.update()
@@ -291,13 +292,17 @@ class Animation(Window):
             keys = pygame.key.get_pressed()
 
             if keys[pygame.K_DOWN]:
-                self.dy += 2
-            if keys[pygame.K_UP]:
                 self.dy -= 2
-            if keys[pygame.K_RIGHT]:
-                self.dx += 2
-            if keys[pygame.K_LEFT]:
+            elif keys[pygame.K_UP]:
+                self.dy += 2
+            elif keys[pygame.K_RIGHT]:
                 self.dx -= 2
+            elif keys[pygame.K_LEFT]:
+                self.dx += 2
+            elif keys[pygame.K_w]:
+                self.scale += 0.02
+            elif keys[pygame.K_s]:
+                self.scale -= 0.02
 
             if self.counter > len(self.input) - 5:
                 self.acceleration = 0
@@ -348,9 +353,12 @@ class Animation(Window):
                                                      [self.screen.get_width(), self.screen.get_height()],
                                                      [self.screen.get_width() / 2, self.screen.get_height()]))
         pygame.draw.circle(self.screen, [0, 255, 255], [self.screen.get_width() * 0.75 + self.dx,
-                                                        self.screen.get_height() / 2 + self.dy], 20)
-        pygame.draw.circle(self.screen, [255, 255, 255], [self.screen.get_width() * 0.75 + new_co[0] + self.dx,
-                                                          self.screen.get_height() / 2 + new_co[1] + self.dy], 10)
+                                                        self.screen.get_height() / 2 + self.dy], self.scale * 20)
+        pygame.draw.circle(self.screen, [255, 255, 255], [self.screen.get_width() * 0.75 + self.scale * new_co[0]
+                                                          + self.dx,
+                                                          self.screen.get_height() / 2 + self.scale * new_co[1]
+                                                          + self.dy],
+                           self.scale * 10)
 
     @staticmethod
     def print_gcrs_coord(screen, display_size, q):
@@ -649,7 +657,7 @@ class InsertField(Field):
             self.value += "|"
             self.text.set_text(self.value)
 
-    def disactivate(self):
+    def deactivate(self):
         """
         disactivate field
         :return:
@@ -690,7 +698,7 @@ class ChoiceField(Field):
         self.x = x
         self.y = y
         self.screen = screen
-        self.text = Text("< " + self.elements[self.choice] + " >", WHITE, (self.x, self.y), 40, self.screen, BLACK)
+        self.text = Text("< > " + self.elements[self.choice], WHITE, (self.x, self.y), 40, self.screen, BLACK)
         self.is_alive = True
 
     def check_mouse(self):
@@ -705,14 +713,13 @@ class ChoiceField(Field):
                     self.choice -= 1
                 else:
                     self.choice = len(self.elements) - 1
-                self.text.set_text("< " + self.elements[self.choice] + " >")
-            elif self.x + 15 * (len(self.elements[self.choice]) + 2) < mouse_pos[0] < self.x + 15 * (
-                    len(self.elements[self.choice]) + 6) and self.y < mouse_pos[1] < self.y + 40:
+                self.text.set_text("< > " + self.elements[self.choice])
+            elif self.x + 25 < mouse_pos[0] < self.x + 40 and self.y < mouse_pos[1] < self.y + 40:
                 if self.choice < len(self.elements) - 1:
                     self.choice += 1
                 else:
                     self.choice = 0
-                self.text.set_text("< " + self.elements[self.choice] + " >")
+                self.text.set_text("< > " + self.elements[self.choice])
 
     def draw(self):
         """
