@@ -16,11 +16,15 @@ BLUE = (0, 0, 255)
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.image.load("rocket.png")
+        self.image = pygame.image.load("rocket.jpg")
         self.rect = self.image.get_rect()
         self.rect.center = (WIDTH / 2, HEIGHT / 2)
 
     def update(self):
+        """
+        move object
+        :return:
+        """
         self.rect.x += 5
         if self.rect.left > WIDTH:
             self.rect.right = 0
@@ -57,17 +61,3 @@ while running:
     pygame.display.flip()
 
 pygame.quit()
-
-
-
-#window = pg.display.set_mode((800, 600))
-#screen = pg.Surface((800, 600))
-#cube = pg.image.load("cube.jpg")
-#start_game = True
-#x_cube = 0
-
-#while start_game == True:
-#    x_cube += 0.1
-#    window.blit(screen, (0, 0))
-#    screen.blit(cube, (x_cube, 100))
-#    pg.display.update()
