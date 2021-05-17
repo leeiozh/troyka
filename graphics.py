@@ -204,7 +204,6 @@ class Menu(Window):
                                 self.error_load(self.field_filename1.value)
                                 self.texts = np.append(self.texts, self.text32)
                                 f = False
-                                continue
                         if f:
                             return answer
 
@@ -307,6 +306,7 @@ class Animation(Window):
             self.plot(self.x, self.y, self.counter, self.x_axis, self.y_axis)
             self.print_kepler_coord(self.screen, self.display, self.input[self.counter])
             self.print_gcrs_coord(self.screen, self.display, self.input[self.counter])
+            self.print_instructions(self.screen, self.display)
             pygame.display.update()
             self.screen.fill(WHITE)
             for event in pygame.event.get():
@@ -480,6 +480,19 @@ class Animation(Window):
                                   * display_size[0], (570 + self.long[i] * 0.65) / 800 * display_size[1]),
                                  ((310 + self.lang[i + 1] + i * 0.005) / 1200 * display_size[0],
                                   (570 + self.long[i + 1] * 0.65) / 800 * display_size[1]), 4)
+
+    @staticmethod
+    def print_instructions(screen, display):
+        """
+        print instructions on the screen
+        :param screen:
+        :param display:
+        :return:
+        """
+        font = pygame.font.Font(None, 20)
+        font_color = (255, 255, 255)
+        screen.blit(font.render("W/S - scale      arrows - move", True, font_color),
+                    [display[0] * 0.7, display[1] * 0.95])
 
 
 class LoadingWindow(Window):
