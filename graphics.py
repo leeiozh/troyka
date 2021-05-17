@@ -134,6 +134,7 @@ class Menu(Window):
         self.text30 = Text("Save to file:", YELLOW, (col3_x + 40, 660), 50, self.screen)
         self.text31 = Text("filename", WHITE, (col3_x, 710), 50, self.screen)
         self.text32 = Text("This file does not exist!", RED, (col4_x + 50, 645), 30, self.screen)
+        self.text33 = Text("Incorrect value!", RED, (440, 740), 40, self.screen)
 
         self.texts = np.array([self.text1, self.text2, self.text3, self.text4, self.text5, self.text6, self.text7,
                                self.text8, self.text9, self.text10, self.text11, self.text12, self.text13, self.text14,
@@ -187,16 +188,20 @@ class Menu(Window):
                             text.activate()
 
                     if self.start_button.check_mouse():
-                        answer = [float(self.field_x.value), float(self.field_y.value), float(self.field_z.value),
-                                  float(self.field_vx.value), float(self.field_vy.value),
-                                  float(self.field_vz.value),
-                                  float(self.field_t.value), float(self.field_step.value),
-                                  self.field_x_plot.choice, self.field_y_plot.choice,
-                                  self.air_force_click.is_active, self.sun_force_click.is_active,
-                                  self.field_integrator.choice, int(self.field_mass.value),
-                                  self.load_click.is_active, self.save_click.is_active, self.field_filename1.value,
-                                  self.field_filename2.value, False]
                         f = True
+                        try:
+                            answer = [float(self.field_x.value), float(self.field_y.value), float(self.field_z.value),
+                                      float(self.field_vx.value), float(self.field_vy.value),
+                                      float(self.field_vz.value),
+                                      float(self.field_t.value), float(self.field_step.value),
+                                      self.field_x_plot.choice, self.field_y_plot.choice,
+                                      self.air_force_click.is_active, self.sun_force_click.is_active,
+                                      self.field_integrator.choice, int(self.field_mass.value),
+                                      self.load_click.is_active, self.save_click.is_active, self.field_filename1.value,
+                                      self.field_filename2.value, False]
+                        except ValueError:
+                            self.texts = np.append(self.texts, self.text33)
+                            continue
                         if self.load_click.is_active:
                             try:
                                 np.load(self.field_filename1.value + "/ballistic1.npy")
@@ -259,7 +264,8 @@ class Animation(Window):
         :param x_axis: name for x-axis
         :param y_axis: name for y-axis
         """
-        self.accel_field = ChoiceField(650, 750, [1, 2, 3, 5, 10, 20, 50], screen)
+        self.accel_field = ChoiceField(750, 750, [1, 2, 3, 5, 10, 20, 50], screen)
+        self.accel_text = Text("Speed", YELLOW, (630, 745), 50, screen)
         self.matrix = np.array([[1, 0.2], [0.7, 1], [-1, 0]])
         self.display = (1200, 800)
         self.scale = 1
@@ -301,6 +307,7 @@ class Animation(Window):
             self.plot_map(self.screen, self.counter, self.display)
             self.draw_objects()
             self.accel_field.draw()
+            self.accel_text.draw()
             # time.sleep(self.dt)
             self.counter += self.acceleration
             self.plot(self.x, self.y, self.counter, self.x_axis, self.y_axis)
