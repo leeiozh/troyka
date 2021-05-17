@@ -13,6 +13,7 @@ YELLOW = (255, 200, 0)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 GREY = (100, 100, 100)
+RED = (255, 0, 0)
 FIELD_WIDTH = 255
 FIELD_HEIGHT = 40
 col1_x = 150
@@ -85,7 +86,7 @@ class Menu(Window):
         self.field_vz = InsertField(1000, col4_x, 300, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
         self.field_step = InsertField(1, col4_x, 375, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
         self.field_filename1 = InsertField("load", col4_x + 50, 600, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
-        self.field_filename2 = InsertField("save", col4_x + 50, 700, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
+        self.field_filename2 = InsertField("save", col4_x + 50, 710, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
         self.field_mass = InsertField("100", col4_x, 75, FIELD_WIDTH, FIELD_HEIGHT, self.screen)
         self.field_integrator = ChoiceField(col1_x + 200, 455, ["EulerMethod", "RK4Method", "DorPrMethod"], screen, 1)
         self.field_x_plot = ChoiceField(col4_x + 200, 455, ["x", "y", "z", "vx", "vy", "vz", "time"], screen, 6)
@@ -93,7 +94,7 @@ class Menu(Window):
         self.air_force_click = ClickField(col1_x, 575, self.screen)
         self.sun_force_click = ClickField(col1_x, 625, self.screen)
         self.load_click = ClickField(col3_x, 550, self.screen)
-        self.save_click = ClickField(col3_x, 650, self.screen)
+        self.save_click = ClickField(col3_x, 660, self.screen)
         self.insert_fields = np.array([self.field_x, self.field_y, self.field_z, self.field_vx, self.field_vy,
                                        self.field_vz, self.field_t, self.field_step, self.field_filename2,
                                        self.field_filename1, self.field_mass])
@@ -130,8 +131,9 @@ class Menu(Window):
         self.text27 = Text("Light pressure", WHITE, (col1_x + 60, 625), 50, self.screen)
         self.text28 = Text("Open from file:", YELLOW, (col3_x + 40, 550), 50, self.screen)
         self.text29 = Text("filename", WHITE, (col3_x, 600), 50, self.screen)
-        self.text30 = Text("Save to file:", YELLOW, (col3_x + 40, 650), 50, self.screen)
-        self.text31 = Text("filename", WHITE, (col3_x, 700), 50, self.screen)
+        self.text30 = Text("Save to file:", YELLOW, (col3_x + 40, 660), 50, self.screen)
+        self.text31 = Text("filename", WHITE, (col3_x, 710), 50, self.screen)
+        self.text32 = Text("This file does not exist!", RED, (col4_x + 50, 645), 30, self.screen)
 
         self.texts = np.array([self.text1, self.text2, self.text3, self.text4, self.text5, self.text6, self.text7,
                                self.text8, self.text9, self.text10, self.text11, self.text12, self.text13, self.text14,
@@ -200,6 +202,7 @@ class Menu(Window):
                                 np.load(self.field_filename1.value + "/ballistic1.npy")
                             except IOError:
                                 self.error_load(self.field_filename1.value)
+                                self.texts = np.append(self.texts, self.text32)
                                 f = False
                                 continue
                         if f:
@@ -316,19 +319,19 @@ class Animation(Window):
             keys = pygame.key.get_pressed()
 
             if keys[pygame.K_DOWN]:
-                self.dy -= 2
+                self.dy -= 5
             elif keys[pygame.K_UP]:
-                self.dy += 2
+                self.dy += 5
             elif keys[pygame.K_RIGHT]:
-                self.dx -= 2
+                self.dx -= 5
             elif keys[pygame.K_LEFT]:
-                self.dx += 2
+                self.dx += 5
             elif keys[pygame.K_w]:
                 self.scale += 0.02
             elif keys[pygame.K_s]:
                 self.scale -= 0.02
 
-            if self.counter + self.acceleration >= len(self.input):
+            if self.counter + self.acceleration >= len(self.input) - 1:
                 self.acceleration = 0
 
     def plot(self, x, y, counter, x_title="", y_title=""):
@@ -341,9 +344,6 @@ class Animation(Window):
         :param y_title: user's y title
         :return: plot image
         """
-        self.create_text(y_title, BLACK, (self.plot_x, self.plot_y - 30), 30, self.screen, WHITE)
-        self.create_text(x_title, BLACK, (self.plot_x + self.plot_w - 5 * len(x_title),
-                                          self.plot_y + self.plot_h + 20), 30, self.screen, WHITE)
         pygame.draw.line(self.screen, BLACK, (self.plot_x, self.plot_y), (self.plot_x, self.plot_y + self.plot_h), 5)
         pygame.draw.line(self.screen, BLACK, (self.plot_x, self.plot_y + self.plot_h),
                          (self.plot_x + self.plot_w, self.plot_y + self.plot_h), 5)
@@ -353,6 +353,8 @@ class Animation(Window):
                          (self.plot_x + self.plot_w - 15, self.plot_y + self.plot_h + 10), 5)
         pygame.draw.line(self.screen, BLACK, (self.plot_x + self.plot_w, self.plot_y + self.plot_h),
                          (self.plot_x + self.plot_w - 15, self.plot_y + self.plot_h - 10), 5)
+
+        # сетка
         for i in range(6):
             pygame.draw.line(self.screen, BLACK, (self.plot_x + i * self.plot_w / 5, self.plot_y),
                              (self.plot_x + i * self.plot_w / 5, self.plot_y + self.plot_h), 1)
@@ -360,6 +362,30 @@ class Animation(Window):
                              (self.plot_x + self.plot_w, self.plot_y + self.plot_h - i * self.plot_h / 5), 1)
         kx = 0.8 * self.plot_w / (max(x) - min(x))
         ky = 0.8 * self.plot_h / (max(y) - min(y))
+        # рисую деления и циферки
+        size_x = len(str(int(max(abs(x))))) - 1
+        size_y = len(str(int(max(abs(y))))) - 1
+        for i in range(1, 5):
+            x_window = self.plot_x + i * self.plot_w / 5
+            y_window = self.plot_y + self.plot_h - i * self.plot_h / 5
+            x_value = round((x_window - self.plot_x - self.plot_w * 0.1 + kx * min(x)) / kx / 10 ** size_x, 1)
+            y_value = round((self.plot_y + self.plot_h - self.plot_h * 0.1 + ky * min(y) - y_window) / ky /
+                            10 ** size_y, 1)
+            self.create_text(str(x_value), BLACK, (x_window - 10, self.plot_y + self.plot_h + 10), 25, self.screen,
+                             WHITE)
+            self.create_text(str(y_value), BLACK, (self.plot_x - 35, y_window - 10), 25, self.screen, WHITE)
+        # подписи осей
+        if size_x - 1 > 1:
+            x_title += "*10^" + str(size_x)
+        elif size_x - 1:
+            x_title += "*10"
+        if size_y - 1 > 1:
+            y_title += "*10^" + str(size_y)
+        elif size_y - 1:
+            y_title += "*10"
+        self.create_text(y_title, BLACK, (self.plot_x, self.plot_y - 30), 30, self.screen, WHITE)
+        self.create_text(x_title, BLACK, (self.plot_x + self.plot_w - 5 * len(x_title),
+                                          self.plot_y + self.plot_h + 20), 30, self.screen, WHITE)
         x = self.plot_x + self.plot_w * 0.1 + kx * x - kx * min(x)
         y = self.plot_y + self.plot_h - ky * y - self.plot_h * 0.1 + ky * min(y)
         x = x[0:counter]
