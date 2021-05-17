@@ -18,6 +18,10 @@ font = pygame.font.Font('freesansbold.ttf', 32)
 
 
 def output():
+    """
+    outputs parameters
+    :return:
+    """
     text_1 = font.render("Semimajor axis a =" + str(q[0] / 1000) + "km", True, green, blue)
     text_1Rect = text_1.get_rect()
     text_1Rect.center = (X // 3, Y // 6)
