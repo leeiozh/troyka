@@ -1,5 +1,4 @@
 import pygame
-import random
 
 WIDTH = 800
 HEIGHT = 650

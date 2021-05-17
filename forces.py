@@ -91,9 +91,9 @@ class ResistForce(BaseForce):
         """
         height = (q[0] ** 2 + q[1] ** 2 + q[2] ** 2) ** 0.5 - 6.37e6
         rho = self.get_atmosphere(height)
-        self.Force[0] = - 0.5 * self.Cx * self.Square * rho * (q[3] ** 2)
-        self.Force[1] = - 0.5 * self.Cx * self.Square * rho * (q[4] ** 2)
-        self.Force[2] = - 0.5 * self.Cx * self.Square * rho * (q[5] ** 2)
+        self.Force[0] = + 0.5 * self.Cx * self.Square * rho * (q[3] ** 2)
+        self.Force[1] = + 0.5 * self.Cx * self.Square * rho * (q[4] ** 2)
+        self.Force[2] = + 0.5 * self.Cx * self.Square * rho * (q[5] ** 2)
 
         return self.Force
 
@@ -130,7 +130,8 @@ class SunForce(BaseForce):
         """
         self.Square = Square
 
-    def tapor(self, q, sun, r):
+    @staticmethod
+    def tapor(q, sun, r):
         """
         returns true if the satellite is in the shadow of the earth
         :param q: satellite's coordinates
@@ -139,10 +140,10 @@ class SunForce(BaseForce):
         :return: is satellite in the shadow
         """
 
-        l = (np.sqrt(q[0] ** 2 + q[1] ** 2 + q[2] ** 2))
+        lin = (np.sqrt(q[0] ** 2 + q[1] ** 2 + q[2] ** 2))
         h = (sun[0] ** 2 + sun[1] ** 2 + sun[2] ** 2) ** 0.5
         sin_alpha = 6378100 / h
-        sin_beta = (1 - ((r ** 2 + h ** 2 - l ** 2) / 2 / r / h) ** 2) ** 0.5
+        sin_beta = (1 - ((r ** 2 + h ** 2 - lin ** 2) / 2 / r / h) ** 2) ** 0.5
         if sin_beta < sin_alpha:
             return True
         else:
